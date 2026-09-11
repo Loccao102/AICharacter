@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MUSE = ROOT / "external" / "MuseTalk"
 MODELS = MUSE / "models"
 MUSE_PYTHON = MUSE / ".venv" / "Scripts" / "python.exe"
+VIENEU_PYTHON = ROOT / "external" / "vieneu" / ".venv" / "Scripts" / "python.exe"
 
 REQUIRED_WEIGHTS = {
     "musetalk_v15_unet": MODELS / "musetalkV15" / "unet.pth",
@@ -65,6 +66,26 @@ def check_musetalk_python() -> dict:
     return {"ok": True, **json.loads(run.stdout.strip())}
 
 
+def check_vieneu_python() -> dict:
+    if not VIENEU_PYTHON.exists():
+        return {"ok": False, "error": f"missing {VIENEU_PYTHON}"}
+    code = (
+        "import json, importlib.metadata; "
+        "print(json.dumps({'version': importlib.metadata.version('vieneu'), 'backend': 'onnx'}))"
+    )
+    run = subprocess.run(
+        [str(VIENEU_PYTHON), "-c", code],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=30,
+    )
+    if run.returncode != 0:
+        return {"ok": False, "error": run.stderr.strip()}
+    return {"ok": True, **json.loads(run.stdout.strip())}
+
+
 def check_weights() -> dict:
     result: dict[str, dict] = {}
     for name, path in REQUIRED_WEIGHTS.items():
@@ -86,6 +107,7 @@ def main() -> int:
         "weights_ok": all(item["ok"] for item in weights.values()),
         "weights": weights,
         "musetalk_python": check_musetalk_python(),
+        "vieneu_python": check_vieneu_python(),
     }
     print(json.dumps(checks, ensure_ascii=False, indent=2))
 
@@ -101,15 +123,20 @@ def main() -> int:
         errors.append("MuseTalk Python environment chua san sang")
     elif not checks["musetalk_python"].get("cuda"):
         errors.append("PyTorch trong MuseTalk khong nhin thay CUDA")
+    if not checks["vieneu_python"]["ok"]:
+        errors.append("VieNeu local voice engine chua san sang")
 
     if errors:
         print("\nCAN XU LY:")
         for item in errors:
             print(f"- {item}")
-        print("\nRun: .\\scripts\\download_musetalk_weights.ps1")
+        if not checks["weights_ok"]:
+            print("\nMuseTalk weights: .\\scripts\\download_musetalk_weights.ps1")
+        if not checks["vieneu_python"]["ok"]:
+            print("VieNeu voice: .\\scripts\\setup_vieneu_windows.ps1")
         return 1
 
-    print("\nOK: MuseTalk 1.5 environment and all required weights are ready.")
+    print("\nOK: MuseTalk 1.5 + CUDA + VieNeu local voice engine are ready.")
     return 0
 
 
