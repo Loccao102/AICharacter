@@ -8,18 +8,19 @@
     :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
     * { box-sizing: border-box; }
     body { margin: 0; background: #0a0c10; color: #eef1f6; }
-    main { width: min(1180px, calc(100% - 32px)); margin: 32px auto 80px; }
+    main { width: min(1220px, calc(100% - 32px)); margin: 32px auto 80px; }
     header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
     h1 { margin: 0; font-size: 32px; }
     h2 { margin: 0 0 18px; font-size: 20px; }
+    h3 { margin: 18px 0 10px; font-size: 14px; color: #cfd5df; }
     .muted { color: #9aa3b2; }
-    .grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
     .card { background: #12161d; border: 1px solid #242b36; border-radius: 18px; padding: 22px; }
     label { display: grid; gap: 7px; font-size: 14px; color: #c5cbd5; margin-bottom: 14px; }
     input, textarea, select, button { font: inherit; }
     input, textarea, select { width: 100%; border: 1px solid #303847; background: #0c1016; color: #fff; border-radius: 10px; padding: 11px 12px; outline: none; }
     input:focus, textarea:focus, select:focus { border-color: #7686ff; }
-    textarea { min-height: 126px; resize: vertical; }
+    textarea { min-height: 96px; resize: vertical; }
     button { border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer; background: #eef1f6; color: #0a0c10; font-weight: 700; }
     button.secondary { background: #202733; color: #eef1f6; }
     button:disabled { opacity: .5; cursor: not-allowed; }
@@ -28,57 +29,82 @@
     .dot { width: 8px; height: 8px; border-radius: 50%; background: #687386; }
     .dot.ok { background: #43d17a; }
     .dot.warn { background: #f0b44f; }
-    .characters { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; }
-    .character { border: 1px solid #29313d; border-radius: 12px; overflow: hidden; background: #0d1117; }
+    .note { background: #0c1016; border: 1px solid #242b36; border-radius: 12px; padding: 12px; font-size: 13px; line-height: 1.55; color: #aeb7c5; margin-bottom: 18px; }
+    .preview-grid { display: grid; grid-template-columns: repeat(5, minmax(72px, 1fr)); gap: 8px; margin: 10px 0 16px; }
+    .preview { position: relative; border: 2px solid transparent; border-radius: 12px; overflow: hidden; background: #0c1016; cursor: pointer; min-height: 94px; }
+    .preview.selected { border-color: #7d8cff; }
+    .preview img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+    .preview span { display: block; padding: 6px; font-size: 11px; text-align: center; color: #aeb7c5; }
+    .preview.selected span { color: #fff; font-weight: 700; }
+    .characters { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+    .character { border: 1px solid #29313d; border-radius: 12px; overflow: hidden; background: #0d1117; cursor: pointer; transition: border-color .2s, transform .2s; }
+    .character:hover { border-color: #59677c; transform: translateY(-1px); }
+    .character.selected { border-color: #7d8cff; }
     .character img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
-    .character div { padding: 9px; font-size: 12px; }
+    .character .meta { padding: 9px; font-size: 12px; line-height: 1.45; }
+    .pill { display: inline-block; margin-top: 6px; padding: 3px 6px; border-radius: 999px; background: #202733; color: #bfc7d4; font-size: 10px; }
     .job { margin-top: 20px; border-top: 1px solid #2a313d; padding-top: 18px; }
     .progress { height: 8px; background: #252c36; border-radius: 999px; overflow: hidden; margin: 10px 0; }
     .progress > div { height: 100%; width: 0; background: #dfe4ee; transition: width .3s ease; }
     video { width: 100%; max-height: 620px; margin-top: 16px; border-radius: 14px; background: #000; }
     .error { color: #ff8b8b; white-space: pre-wrap; }
-    .note { background: #0c1016; border: 1px solid #242b36; border-radius: 12px; padding: 12px; font-size: 13px; line-height: 1.5; color: #aeb7c5; margin-bottom: 18px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
+    .success { color: #62db91; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } .preview-grid { grid-template-columns: repeat(3, 1fr); } }
   </style>
 </head>
 <body>
 <main>
   <header>
     <div>
-      <h1>AICharacter</h1>
-      <div class="muted">Character cố định → TTS → MuseTalk → video affiliate 9:16</div>
+      <h1>AICharacter <span class="muted" style="font-size:14px">V2</span></h1>
+      <div class="muted">Một identity cố định → dùng lại cho mọi video affiliate</div>
     </div>
     <div class="status"><span id="healthDot" class="dot"></span><span id="healthText">Đang kiểm tra...</span></div>
   </header>
 
   <div class="grid">
     <section class="card">
-      <h2>1. Character</h2>
-      <div class="note">V1 dùng 1 ảnh master. Chọn ảnh từ ngực/eo trở lên, mặt rõ, ánh sáng đều. Không dùng mặt người thật nếu không có quyền sử dụng.</div>
+      <h2>1. Tạo character từ khuôn mặt</h2>
+      <div class="note">
+        Upload <strong>1–5 ảnh của cùng một người</strong>. Chọn một ảnh làm master để MuseTalk dùng cho video hiện tại; các ảnh còn lại được lưu thành reference set cho Multiple Looks/identity generation ở bước sau. Nên dùng ảnh chính diện, rõ mặt, ánh sáng đều và từ ngực trở lên.
+      </div>
       <form id="characterForm">
         <div class="row">
-          <label>ID
-            <input name="character_id" placeholder="minh-tech" required pattern="[a-zA-Z0-9_-]{2,49}" />
+          <label>Character ID
+            <input name="character_id" placeholder="loc-main" required pattern="[a-zA-Z0-9_-]{2,49}" />
           </label>
           <label>Tên hiển thị
-            <input name="name" placeholder="Minh Tech" required />
+            <input name="name" placeholder="Loc Tech" required />
           </label>
         </div>
-        <label>Ảnh master
-          <input name="image" type="file" accept="image/*" required />
+        <label>Ảnh reference (1–5 ảnh)
+          <input id="characterImages" name="images" type="file" accept="image/*" multiple required />
         </label>
-        <button type="submit">Lưu character</button>
+        <input id="primaryIndex" name="primary_index" type="hidden" value="0" />
+        <div id="imagePreviews" class="preview-grid"></div>
+        <div id="primaryHint" class="muted" style="font-size:12px;margin:-6px 0 14px">Ảnh đầu tiên sẽ là master. Click thumbnail để đổi.</div>
+        <label>Giọng mặc định của character
+          <input name="voice" value="vi-VN-NamMinhNeural" placeholder="vi-VN-NamMinhNeural" />
+        </label>
+        <label>Persona / cách nói <span class="muted">(lưu cùng character)</span>
+          <textarea name="persona" placeholder="KOC tech Việt Nam, nói tự nhiên, ngắn, tập trung vào giá và trải nghiệm; không quảng cáo quá đà."></textarea>
+        </label>
+        <button type="submit">Tạo character cố định</button>
         <span id="characterMessage" class="muted" style="margin-left:10px"></span>
       </form>
+
+      <h3>Character Library</h3>
       <div id="characters" class="characters"></div>
     </section>
 
     <section class="card">
-      <h2>2. Generate video</h2>
+      <h2>2. Generate video bằng character đã lưu</h2>
+      <div class="note">Mỗi video chỉ cần chọn <code>character_id</code>. Hệ thống dùng lại đúng master face và giọng mặc định của character; không tạo một người mới cho từng video.</div>
       <form id="videoForm">
         <label>Character
           <select id="characterSelect" name="character_id" required></select>
         </label>
+        <div id="selectedCharacter" class="note" style="display:none"></div>
         <label>Tên sản phẩm
           <input name="product_name" placeholder="UGREEN GaN 65W" required />
         </label>
@@ -93,13 +119,13 @@
         <label>Ảnh sản phẩm
           <input name="product_image" type="file" accept="image/*" required />
         </label>
-        <label>Giọng Edge TTS
-          <input name="voice" placeholder="vi-VN-NamMinhNeural (để trống dùng mặc định)" />
+        <label>Override giọng <span class="muted">(để trống = dùng giọng character)</span>
+          <input id="videoVoice" name="voice" placeholder="Dùng voice đã lưu của character" />
         </label>
         <label>Script <span class="muted">(để trống = tự tạo template)</span>
           <textarea name="script" placeholder="Nếu mọi người thấy con này xuống khoảng 299 nghìn..."></textarea>
         </label>
-        <button id="generateButton" type="submit">Generate</button>
+        <button id="generateButton" type="submit">Generate bằng character này</button>
       </form>
 
       <div id="job" class="job" hidden>
@@ -114,6 +140,7 @@
 </main>
 <script>
   const $ = (id) => document.getElementById(id);
+  let characters = [];
 
   async function request(url, options) {
     const response = await fetch(url, options);
@@ -125,27 +152,71 @@
     return response.json();
   }
 
+  function text(value) {
+    return document.createTextNode(value ?? '');
+  }
+
   async function loadHealth() {
     try {
       const h = await request('/api/health');
       const ready = h.musetalk_cloned && h.musetalk_weights && h.musetalk_python_exists;
       $('healthDot').className = `dot ${ready ? 'ok' : 'warn'}`;
-      $('healthText').textContent = ready ? 'MuseTalk sẵn sàng' : 'Cần setup MuseTalk/model';
+      $('healthText').textContent = ready ? `V${h.version} · MuseTalk sẵn sàng` : `V${h.version} · Cần setup MuseTalk/model`;
     } catch (e) {
       $('healthText').textContent = 'API lỗi';
     }
   }
 
-  async function loadCharacters() {
-    const items = await request('/api/characters');
+  function updateSelectedCharacter() {
+    const id = $('characterSelect').value;
+    const item = characters.find((x) => x.character_id === id);
+    document.querySelectorAll('.character').forEach((el) => el.classList.toggle('selected', el.dataset.id === id));
+    if (!item) {
+      $('selectedCharacter').style.display = 'none';
+      return;
+    }
+    $('selectedCharacter').style.display = 'block';
+    $('selectedCharacter').textContent = `${item.name} · ${item.reference_count} reference · voice: ${item.voice || 'mặc định hệ thống'}`;
+    $('videoVoice').placeholder = item.voice ? `Đang dùng ${item.voice}` : 'Dùng voice mặc định hệ thống';
+  }
+
+  async function loadCharacters(preferredId = '') {
+    characters = await request('/api/characters');
     const list = $('characters');
     const select = $('characterSelect');
+    const previous = preferredId || select.value;
     list.innerHTML = '';
     select.innerHTML = '';
-    for (const item of items) {
+
+    for (const item of characters) {
       const box = document.createElement('div');
       box.className = 'character';
-      box.innerHTML = `<img src="${item.image_url}" alt=""><div><strong>${item.name}</strong><br><span class="muted">${item.character_id}</span></div>`;
+      box.dataset.id = item.character_id;
+      box.addEventListener('click', () => {
+        select.value = item.character_id;
+        updateSelectedCharacter();
+      });
+
+      const img = document.createElement('img');
+      img.src = `${item.image_url}?t=${Date.now()}`;
+      img.alt = item.name;
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const strong = document.createElement('strong');
+      strong.appendChild(text(item.name));
+      meta.appendChild(strong);
+      meta.appendChild(document.createElement('br'));
+      const idLine = document.createElement('span');
+      idLine.className = 'muted';
+      idLine.appendChild(text(item.character_id));
+      meta.appendChild(idLine);
+      meta.appendChild(document.createElement('br'));
+      const pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.appendChild(text(`${item.reference_count} ảnh reference`));
+      meta.appendChild(pill);
+      box.appendChild(img);
+      box.appendChild(meta);
       list.appendChild(box);
 
       const option = document.createElement('option');
@@ -153,25 +224,81 @@
       option.textContent = `${item.name} (${item.character_id})`;
       select.appendChild(option);
     }
-    if (!items.length) {
+
+    if (!characters.length) {
       list.innerHTML = '<div class="muted">Chưa có character.</div>';
       select.innerHTML = '<option value="">Hãy tạo character trước</option>';
+      updateSelectedCharacter();
+      return;
     }
+
+    if (previous && characters.some((x) => x.character_id === previous)) select.value = previous;
+    updateSelectedCharacter();
   }
+
+  function renderReferencePreviews() {
+    const files = Array.from($('characterImages').files || []);
+    const container = $('imagePreviews');
+    container.innerHTML = '';
+    if (files.length > 5) {
+      $('characterMessage').textContent = 'Chỉ chọn tối đa 5 ảnh.';
+      $('characterImages').value = '';
+      $('primaryIndex').value = '0';
+      return;
+    }
+    let selected = Number($('primaryIndex').value || 0);
+    if (selected >= files.length) selected = 0;
+    $('primaryIndex').value = String(selected);
+
+    files.forEach((file, index) => {
+      const item = document.createElement('div');
+      item.className = `preview ${index === selected ? 'selected' : ''}`;
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.onload = () => URL.revokeObjectURL(img.src);
+      const label = document.createElement('span');
+      label.textContent = index === selected ? 'MASTER' : `Reference ${index + 1}`;
+      item.appendChild(img);
+      item.appendChild(label);
+      item.addEventListener('click', () => {
+        $('primaryIndex').value = String(index);
+        renderReferencePreviews();
+      });
+      container.appendChild(item);
+    });
+  }
+
+  $('characterImages').addEventListener('change', () => {
+    $('characterMessage').textContent = '';
+    $('primaryIndex').value = '0';
+    renderReferencePreviews();
+  });
 
   $('characterForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    $('characterMessage').textContent = 'Đang lưu...';
+    const files = $('characterImages').files;
+    if (!files.length || files.length > 5) {
+      $('characterMessage').textContent = 'Cần 1–5 ảnh reference.';
+      return;
+    }
+    $('characterMessage').className = 'muted';
+    $('characterMessage').textContent = 'Đang lưu identity...';
     try {
-      await request('/api/characters', { method: 'POST', body: new FormData(form) });
-      $('characterMessage').textContent = 'Đã lưu';
+      const created = await request('/api/characters', { method: 'POST', body: new FormData(form) });
+      $('characterMessage').className = 'success';
+      $('characterMessage').textContent = `Đã tạo ${created.name}`;
       form.reset();
-      await loadCharacters();
+      $('primaryIndex').value = '0';
+      $('imagePreviews').innerHTML = '';
+      await loadCharacters(created.character_id);
     } catch (e) {
+      $('characterMessage').className = 'error';
       $('characterMessage').textContent = e.message;
     }
   });
+
+  $('characterSelect').addEventListener('change', updateSelectedCharacter);
 
   $('videoForm').addEventListener('submit', async (event) => {
     event.preventDefault();
