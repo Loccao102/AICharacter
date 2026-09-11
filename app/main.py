@@ -18,7 +18,7 @@ store = CharacterStore(settings)
 jobs = JobManager(max_workers=settings.max_gpu_workers)
 pipeline = RenderPipeline(settings)
 
-app = FastAPI(title="AICharacter", version="0.1.0")
+app = FastAPI(title="AICharacter", version="0.2.0")
 app.mount("/outputs", StaticFiles(directory=settings.outputs_dir), name="outputs")
 app.mount("/characters", StaticFiles(directory=settings.characters_dir), name="characters")
 
@@ -45,6 +45,7 @@ def health() -> dict:
     root = settings.musetalk_dir.resolve()
     return {
         "ok": True,
+        "version": app.version,
         "musetalk_dir": str(root),
         "musetalk_cloned": (root / "scripts" / "inference.py").exists(),
         "musetalk_weights": (root / "models" / "musetalkV15" / "unet.pth").exists(),
@@ -61,14 +62,43 @@ def list_characters() -> list[CharacterInfo]:
     return store.list()
 
 
+@app.get("/api/characters/{character_id}", response_model=CharacterInfo)
+def get_character(character_id: str) -> CharacterInfo:
+    try:
+        return store.get(character_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @app.post("/api/characters", response_model=CharacterInfo)
 def create_character(
     character_id: str = Form(...),
     name: str = Form(...),
-    image: UploadFile = File(...),
+    voice: str = Form(""),
+    persona: str = Form(""),
+    primary_index: int = Form(0),
+    images: list[UploadFile] | None = File(None),
+    image: UploadFile | None = File(None),
 ) -> CharacterInfo:
+    # `image` giữ compatibility với API V1; UI V2 gửi 1-5 file qua `images`.
+    uploads = list(images or [])
+    if not uploads and image is not None:
+        uploads = [image]
+    if not uploads:
+        raise HTTPException(status_code=400, detail="Cần upload ít nhất 1 ảnh khuôn mặt")
+    if len(uploads) > 5:
+        raise HTTPException(status_code=400, detail="Tối đa 5 ảnh reference")
+
     try:
-        return store.create(character_id=character_id, name=name, image_file=image.file)
+        return store.create(
+            character_id=character_id,
+            name=name,
+            image_files=[upload.file for upload in uploads],
+            primary_index=primary_index,
+            voice=voice,
+            persona=persona,
+            source_type="self_avatar",
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileExistsError as exc:
@@ -93,9 +123,12 @@ def create_video(
         raise HTTPException(status_code=400, detail="Tên sản phẩm không được trống")
 
     try:
+        character = store.get(character_id)
         character_image = store.get_master_image(character_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    selected_voice = voice.strip() or character.voice.strip() or None
 
     job_id = uuid4().hex
     work_dir = settings.jobs_dir / job_id
@@ -114,7 +147,7 @@ def create_video(
             current_price=current_price,
             buy_price=buy_price,
             script=script,
-            voice=voice.strip() or None,
+            voice=selected_voice,
             update=update,
         )
 
