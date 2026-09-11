@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 from app.job_manager import JobManager
-from app.schemas import CharacterInfo, JobInfo
+from app.schemas import CharacterInfo, CharacterLookInfo, JobInfo
 from app.services.pipeline import RenderPipeline
 from app.settings import get_settings
 from app.storage import CharacterStore
@@ -18,7 +18,7 @@ store = CharacterStore(settings)
 jobs = JobManager(max_workers=settings.max_gpu_workers)
 pipeline = RenderPipeline(settings)
 
-app = FastAPI(title="AICharacter", version="0.2.0")
+app = FastAPI(title="AICharacter", version="0.3.0")
 app.mount("/outputs", StaticFiles(directory=settings.outputs_dir), name="outputs")
 app.mount("/characters", StaticFiles(directory=settings.characters_dir), name="characters")
 
@@ -66,7 +66,7 @@ def list_characters() -> list[CharacterInfo]:
 def get_character(character_id: str) -> CharacterInfo:
     try:
         return store.get(character_id)
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
@@ -80,7 +80,7 @@ def create_character(
     images: list[UploadFile] | None = File(None),
     image: UploadFile | None = File(None),
 ) -> CharacterInfo:
-    # `image` giữ compatibility với API V1; UI V2 gửi 1-5 file qua `images`.
+    # `image` giữ compatibility với API V1; UI V2+ gửi 1-5 file qua `images`.
     uploads = list(images or [])
     if not uploads and image is not None:
         uploads = [image]
@@ -107,6 +107,45 @@ def create_character(
         raise HTTPException(status_code=400, detail=f"Không thể lưu character: {exc}") from exc
 
 
+@app.get(
+    "/api/characters/{character_id}/looks",
+    response_model=list[CharacterLookInfo],
+)
+def list_character_looks(character_id: str) -> list[CharacterLookInfo]:
+    try:
+        return store.list_looks(character_id)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post(
+    "/api/characters/{character_id}/looks",
+    response_model=CharacterLookInfo,
+)
+def create_character_look(
+    character_id: str,
+    look_id: str = Form(...),
+    name: str = Form(...),
+    image: UploadFile = File(...),
+) -> CharacterLookInfo:
+    try:
+        return store.add_look(
+            character_id=character_id,
+            look_id=look_id,
+            name=name,
+            image_file=image.file,
+            source_type="upload",
+        )
+    except FileExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Không thể lưu look: {exc}") from exc
+
+
 @app.post("/api/videos", response_model=JobInfo)
 def create_video(
     character_id: str = Form(...),
@@ -116,6 +155,7 @@ def create_video(
     product_image: UploadFile = File(...),
     script: str = Form(""),
     voice: str = Form(""),
+    look_id: str = Form(""),
 ) -> JobInfo:
     if current_price <= 0 or buy_price <= 0:
         raise HTTPException(status_code=400, detail="Giá phải lớn hơn 0")
@@ -124,9 +164,11 @@ def create_video(
 
     try:
         character = store.get(character_id)
-        character_image = store.get_master_image(character_id)
+        character_image = store.get_render_image(character_id, look_id.strip() or None)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     selected_voice = voice.strip() or character.voice.strip() or None
 
