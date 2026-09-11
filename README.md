@@ -1,14 +1,17 @@
 # AICharacter
 
-AICharacter là MVP local để biến **một identity cố định + nội dung sản phẩm** thành video dọc 9:16 có nhân vật nói tiếng Việt.
+AICharacter là MVP local để biến **một identity cố định + nhiều Looks + nội dung sản phẩm** thành video dọc 9:16 có nhân vật nói tiếng Việt.
 
-V2 tập trung vào workflow:
+V2.1 tập trung vào workflow:
 
 ```text
 1-5 ảnh cùng một người
       ↓
 Persistent Character Profile
 (character_id + master face + references + voice + persona)
+      ↓
+Multiple Looks
+(hoodie / desk / standing / close-up / ...)
       ↓
 Product image / giá / script
       ↓
@@ -21,19 +24,20 @@ FFmpeg composer
 1080x1920 MP4
 ```
 
-Mục tiêu là: **tạo character một lần, sau đó mọi video chỉ chọn lại `character_id` đó thay vì sinh một người mới**.
+Mục tiêu là: **tạo character một lần, sau đó mọi video chỉ chọn lại `character_id` và tùy chọn `look_id`, thay vì sinh một người mới**.
 
 Dự án ưu tiên chạy trên Windows có NVIDIA GPU. Với RTX 2060 6GB, nên bật FP16 và batch size nhỏ.
 
-## V2 có gì
+## V2.1 có gì
 
 - Tạo character từ **1-5 ảnh reference** của cùng một người.
-- Chọn một ảnh làm `master.png` cho MuseTalk hiện tại.
-- Lưu toàn bộ reference set để dùng cho Multiple Looks / identity-preserving generation ở roadmap tiếp theo.
+- Chọn một ảnh làm `master.png` cho MuseTalk.
+- Lưu toàn bộ reference set để phục vụ identity-preserving generation sau này.
 - Mỗi character có `character_id`, tên, voice mặc định và persona riêng.
-- Generate video chỉ cần chọn character đã lưu; hệ thống dùng lại đúng master face + voice của character.
+- Thêm nhiều **Looks** cho cùng một character: outfit, background, pose, framing khác nhau.
+- Generate video bằng `character_id + look_id`; nếu `look_id` trống thì dùng master face.
 - Backward compatible với character V1 chỉ có một `master.png`.
-- TTS tiếng Việt bằng `edge-tts` (không cần API key, cần Internet).
+- TTS tiếng Việt bằng `edge-tts`.
 - Tạo subtitle SRT tự động.
 - Gọi MuseTalk 1.5 local để lip-sync.
 - Ghép talking-head + ảnh sản phẩm + current price + buy price thành video 9:16.
@@ -41,7 +45,7 @@ Dự án ưu tiên chạy trên Windows có NVIDIA GPU. Với RTX 2060 6GB, nên
 - Job API để render không khóa request.
 - Script PowerShell để bootstrap môi trường Windows.
 
-> V2 vẫn chưa cố làm “nhân vật cầm đúng sản phẩm”. Sản phẩm được hiển thị dưới dạng packshot/card để tránh AI làm sai logo, màu hoặc hình dáng sản phẩm.
+> V2.1 vẫn chưa cố làm “nhân vật cầm đúng sản phẩm”. Sản phẩm được hiển thị dưới dạng packshot/card để tránh AI làm sai logo, màu hoặc hình dáng sản phẩm.
 
 ## Kiến trúc
 
@@ -53,7 +57,11 @@ FastAPI
 Character Store
   ├── character.json
   ├── master.png
-  └── references/ref_01..05.png
+  ├── references/ref_01..05.png
+  └── looks/
+      ├── desk-gray.png
+      ├── hoodie-dark.png
+      └── ...
   ↓
 Job Manager (1 GPU job/lần)
   ├── Edge TTS → speech.mp3 + captions.srt
@@ -72,7 +80,7 @@ MuseTalk được giữ ở thư mục `external/MuseTalk` và **không copy sou
 - Git
 - Khoảng trống ổ đĩa cho MuseTalk model weights
 
-MuseTalk upstream hiện khuyến nghị Python 3.10, PyTorch 2.0.1 + CUDA 11.8 và có hướng dẫn Windows riêng. Upstream cũng đã test FP16 trên RTX 3050 Ti Laptop 4GB VRAM, nên RTX 2060 6GB phù hợp để thử V2 nhưng sẽ không realtime.
+MuseTalk upstream hiện khuyến nghị Python 3.10, PyTorch 2.0.1 + CUDA 11.8. Với RTX 2060 6GB, V2.1 phù hợp để render batch nhưng không nên kỳ vọng realtime.
 
 ## Cài nhanh trên Windows
 
@@ -106,7 +114,7 @@ Chạy app:
 
 Mở `http://127.0.0.1:8000`.
 
-## Luồng dùng V2
+## Luồng dùng V2.1
 
 ### A. Tạo character từ khuôn mặt của bạn
 
@@ -131,28 +139,48 @@ data/characters/<character_id>/
     └── ... ref_05.png
 ```
 
-Ví dụ metadata:
+### B. Thêm Multiple Looks
+
+Một Look là một ảnh khác của **cùng identity**. Ví dụ:
+
+```text
+desk-gray     → áo thun xám, ngồi bàn
+hoodie-dark   → hoodie tối màu
+standing      → đứng nói
+closeup       → khung cận mặt
+```
+
+UI lưu từng Look tại:
+
+```text
+data/characters/<character_id>/looks/<look_id>.png
+```
+
+Metadata character sẽ có thêm:
 
 ```json
 {
-  "character_id": "loc-main",
-  "name": "Loc Tech",
-  "master_image": "master.png",
-  "voice": "vi-VN-NamMinhNeural",
-  "persona": "KOC tech tự nhiên, ngắn, tập trung vào giá",
-  "source_type": "self_avatar",
-  "references": ["ref_01.png", "ref_02.png", "ref_03.png"],
-  "primary_reference": "ref_01.png"
+  "looks": [
+    {
+      "look_id": "desk-gray",
+      "name": "Desk Gray Tee",
+      "filename": "desk-gray.png",
+      "source_type": "upload"
+    }
+  ]
 }
 ```
 
-### B. Generate mọi video bằng cùng character
+### C. Generate mọi video bằng cùng character
 
-Sau khi character đã được tạo, các video tiếp theo chỉ cần:
+Sau khi character đã được tạo, các video tiếp theo dùng:
 
 ```text
 character_id = loc-main
+look_id      = desk-gray   # optional
 ```
+
+Nếu `look_id` trống, hệ thống dùng `master.png`. Nếu có `look_id`, MuseTalk dùng ảnh của Look tương ứng nhưng character vẫn là cùng identity do bạn quản lý.
 
 Bạn nhập thêm:
 
@@ -160,10 +188,8 @@ Bạn nhập thêm:
 - tên sản phẩm;
 - giá hiện tại;
 - `buy price`;
-- script (hoặc để app tự tạo template);
-- voice override nếu muốn, nếu để trống app dùng voice đã lưu của character.
-
-Hệ thống **không tạo một khuôn mặt mới cho mỗi video**. Với V2, MuseTalk luôn render từ `master.png` của character đã chọn.
+- script;
+- voice override nếu muốn.
 
 ## API
 
@@ -185,7 +211,7 @@ voice             optional
 persona           optional
 ```
 
-API cũ gửi một file tên `image` vẫn được hỗ trợ để giữ backward compatibility.
+API cũ gửi một file tên `image` vẫn được hỗ trợ.
 
 ### Get character
 
@@ -193,7 +219,28 @@ API cũ gửi một file tên `image` vẫn được hỗ trợ để giữ back
 GET /api/characters/{character_id}
 ```
 
-Response có `image_url`, `reference_images`, `reference_count`, `voice`, `persona`.
+Response có `image_url`, `reference_images`, `reference_count`, `voice`, `persona`, `looks`, `look_count`.
+
+### List Looks
+
+```http
+GET /api/characters/{character_id}/looks
+```
+
+### Add Look
+
+```http
+POST /api/characters/{character_id}/looks
+Content-Type: multipart/form-data
+```
+
+Fields:
+
+```text
+look_id      required
+name         required
+image        required
+```
 
 ### Generate video
 
@@ -206,6 +253,7 @@ Fields:
 
 ```text
 character_id
+look_id (optional; empty = master face)
 product_name
 current_price
 buy_price
@@ -214,7 +262,7 @@ script (optional)
 voice (optional override)
 ```
 
-Nếu `voice` trống, app tự dùng voice lưu trong character.
+Nếu `voice` trống, app dùng voice lưu trong character.
 
 ### Job status
 
@@ -234,15 +282,11 @@ GPU_BATCH_SIZE=2
 USE_FP16=true
 ```
 
-## Điều V2 đã làm và chưa làm
+## Điều V2.1 đã làm và chưa làm
 
-V2 giải quyết **persistent identity** ở cấp ứng dụng: một character có bộ reference riêng và mọi video tái sử dụng đúng master face đó.
+V2.1 giải quyết **persistent identity ở cấp ứng dụng**: một character có bộ reference, master face và nhiều Look riêng. Render có thể đổi Look mà không tạo một character record mới.
 
-V2 **chưa** dùng 5 ảnh reference để sinh ra ảnh mới ở nhiều outfit/góc/bối cảnh mà vẫn giữ khuôn mặt. Đó là bước identity-preserving generation tiếp theo. Các reference đã được lưu sẵn để không phải thay đổi data model khi bổ sung tính năng đó.
-
-## Vì sao dùng Python thay vì Go ở phần inference?
-
-MuseTalk/PyTorch là Python-first. Giữ GPU worker trong Python làm MVP dễ ổn định hơn. Khi pipeline chạy ổn, có thể thêm Go API/orchestrator phía trước mà không thay phần inference.
+V2.1 **chưa tự sinh Look mới từ reference**. Hiện Look được upload thủ công. Bước tiếp theo là identity-preserving generation: đưa 3-5 reference vào model → sinh outfit/background/pose mới nhưng vẫn giữ đúng khuôn mặt.
 
 ## Roadmap
 
@@ -251,14 +295,15 @@ MuseTalk/PyTorch là Python-first. Giữ GPU worker trong Python làm MVP dễ �
 - [x] Master face selection
 - [x] Character default voice + persona
 - [x] Reuse same `character_id` across all videos
+- [x] Multiple Looks storage + API + UI
+- [x] Render video bằng `look_id`
 - [x] Vietnamese TTS
 - [x] Subtitle generation
 - [x] MuseTalk adapter
 - [x] 9:16 affiliate composer
 - [x] Simple web UI
 - [ ] Identity-preserving generator: references → new Look, same face
-- [ ] Multiple Looks (outfit/background/pose) cho cùng character
-- [ ] ComfyUI adapter
+- [ ] ComfyUI adapter cho identity-preserving workflow
 - [ ] Local Vietnamese TTS provider
 - [ ] LivePortrait motion layer
 - [ ] Product background removal
