@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class JobStatus(str, Enum):
@@ -15,6 +15,11 @@ class CharacterInfo(BaseModel):
     character_id: str
     name: str
     image_url: str
+    voice: str = ""
+    persona: str = ""
+    source_type: str = "self_avatar"
+    reference_images: list[str] = Field(default_factory=list)
+    reference_count: int = 1
 
 
 class JobInfo(BaseModel):
