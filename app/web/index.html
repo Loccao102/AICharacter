@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AICharacter</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0a0c10; color: #eef1f6; }
+    main { width: min(1180px, calc(100% - 32px)); margin: 32px auto 80px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: 32px; }
+    h2 { margin: 0 0 18px; font-size: 20px; }
+    .muted { color: #9aa3b2; }
+    .grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 20px; }
+    .card { background: #12161d; border: 1px solid #242b36; border-radius: 18px; padding: 22px; }
+    label { display: grid; gap: 7px; font-size: 14px; color: #c5cbd5; margin-bottom: 14px; }
+    input, textarea, select, button { font: inherit; }
+    input, textarea, select { width: 100%; border: 1px solid #303847; background: #0c1016; color: #fff; border-radius: 10px; padding: 11px 12px; outline: none; }
+    input:focus, textarea:focus, select:focus { border-color: #7686ff; }
+    textarea { min-height: 126px; resize: vertical; }
+    button { border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer; background: #eef1f6; color: #0a0c10; font-weight: 700; }
+    button.secondary { background: #202733; color: #eef1f6; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; border: 1px solid #2c3440; padding: 8px 10px; border-radius: 999px; color: #b8c0cc; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #687386; }
+    .dot.ok { background: #43d17a; }
+    .dot.warn { background: #f0b44f; }
+    .characters { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; }
+    .character { border: 1px solid #29313d; border-radius: 12px; overflow: hidden; background: #0d1117; }
+    .character img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+    .character div { padding: 9px; font-size: 12px; }
+    .job { margin-top: 20px; border-top: 1px solid #2a313d; padding-top: 18px; }
+    .progress { height: 8px; background: #252c36; border-radius: 999px; overflow: hidden; margin: 10px 0; }
+    .progress > div { height: 100%; width: 0; background: #dfe4ee; transition: width .3s ease; }
+    video { width: 100%; max-height: 620px; margin-top: 16px; border-radius: 14px; background: #000; }
+    .error { color: #ff8b8b; white-space: pre-wrap; }
+    .note { background: #0c1016; border: 1px solid #242b36; border-radius: 12px; padding: 12px; font-size: 13px; line-height: 1.5; color: #aeb7c5; margin-bottom: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>AICharacter</h1>
+      <div class="muted">Character cố định → TTS → MuseTalk → video affiliate 9:16</div>
+    </div>
+    <div class="status"><span id="healthDot" class="dot"></span><span id="healthText">Đang kiểm tra...</span></div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. Character</h2>
+      <div class="note">V1 dùng 1 ảnh master. Chọn ảnh từ ngực/eo trở lên, mặt rõ, ánh sáng đều. Không dùng mặt người thật nếu không có quyền sử dụng.</div>
+      <form id="characterForm">
+        <div class="row">
+          <label>ID
+            <input name="character_id" placeholder="minh-tech" required pattern="[a-zA-Z0-9_-]{2,49}" />
+          </label>
+          <label>Tên hiển thị
+            <input name="name" placeholder="Minh Tech" required />
+          </label>
+        </div>
+        <label>Ảnh master
+          <input name="image" type="file" accept="image/*" required />
+        </label>
+        <button type="submit">Lưu character</button>
+        <span id="characterMessage" class="muted" style="margin-left:10px"></span>
+      </form>
+      <div id="characters" class="characters"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Generate video</h2>
+      <form id="videoForm">
+        <label>Character
+          <select id="characterSelect" name="character_id" required></select>
+        </label>
+        <label>Tên sản phẩm
+          <input name="product_name" placeholder="UGREEN GaN 65W" required />
+        </label>
+        <div class="row">
+          <label>Giá hiện tại
+            <input name="current_price" type="number" min="1" placeholder="359000" required />
+          </label>
+          <label>Buy price
+            <input name="buy_price" type="number" min="1" placeholder="299000" required />
+          </label>
+        </div>
+        <label>Ảnh sản phẩm
+          <input name="product_image" type="file" accept="image/*" required />
+        </label>
+        <label>Giọng Edge TTS
+          <input name="voice" placeholder="vi-VN-NamMinhNeural (để trống dùng mặc định)" />
+        </label>
+        <label>Script <span class="muted">(để trống = tự tạo template)</span>
+          <textarea name="script" placeholder="Nếu mọi người thấy con này xuống khoảng 299 nghìn..."></textarea>
+        </label>
+        <button id="generateButton" type="submit">Generate</button>
+      </form>
+
+      <div id="job" class="job" hidden>
+        <strong id="jobTitle">Job</strong>
+        <div class="progress"><div id="progressBar"></div></div>
+        <div id="jobMessage" class="muted"></div>
+        <div id="jobError" class="error"></div>
+        <video id="resultVideo" controls hidden></video>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  async function request(url, options) {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`;
+      try { detail = (await response.json()).detail || detail; } catch (_) {}
+      throw new Error(detail);
+    }
+    return response.json();
+  }
+
+  async function loadHealth() {
+    try {
+      const h = await request('/api/health');
+      const ready = h.musetalk_cloned && h.musetalk_weights && h.musetalk_python_exists;
+      $('healthDot').className = `dot ${ready ? 'ok' : 'warn'}`;
+      $('healthText').textContent = ready ? 'MuseTalk sẵn sàng' : 'Cần setup MuseTalk/model';
+    } catch (e) {
+      $('healthText').textContent = 'API lỗi';
+    }
+  }
+
+  async function loadCharacters() {
+    const items = await request('/api/characters');
+    const list = $('characters');
+    const select = $('characterSelect');
+    list.innerHTML = '';
+    select.innerHTML = '';
+    for (const item of items) {
+      const box = document.createElement('div');
+      box.className = 'character';
+      box.innerHTML = `<img src="${item.image_url}" alt=""><div><strong>${item.name}</strong><br><span class="muted">${item.character_id}</span></div>`;
+      list.appendChild(box);
+
+      const option = document.createElement('option');
+      option.value = item.character_id;
+      option.textContent = `${item.name} (${item.character_id})`;
+      select.appendChild(option);
+    }
+    if (!items.length) {
+      list.innerHTML = '<div class="muted">Chưa có character.</div>';
+      select.innerHTML = '<option value="">Hãy tạo character trước</option>';
+    }
+  }
+
+  $('characterForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    $('characterMessage').textContent = 'Đang lưu...';
+    try {
+      await request('/api/characters', { method: 'POST', body: new FormData(form) });
+      $('characterMessage').textContent = 'Đã lưu';
+      form.reset();
+      await loadCharacters();
+    } catch (e) {
+      $('characterMessage').textContent = e.message;
+    }
+  });
+
+  $('videoForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    $('generateButton').disabled = true;
+    $('job').hidden = false;
+    $('resultVideo').hidden = true;
+    $('jobError').textContent = '';
+    $('progressBar').style.width = '0%';
+    $('jobMessage').textContent = 'Đang tạo job...';
+    try {
+      const job = await request('/api/videos', { method: 'POST', body: new FormData(form) });
+      $('jobTitle').textContent = `Job ${job.job_id.slice(0, 8)}`;
+      pollJob(job.job_id);
+    } catch (e) {
+      $('jobError').textContent = e.message;
+      $('generateButton').disabled = false;
+    }
+  });
+
+  async function pollJob(jobId) {
+    try {
+      const job = await request(`/api/jobs/${jobId}`);
+      $('progressBar').style.width = `${job.progress || 0}%`;
+      $('jobMessage').textContent = `${job.status} · ${job.message || ''}`;
+      if (job.status === 'completed') {
+        $('generateButton').disabled = false;
+        $('resultVideo').src = `${job.output_url}?t=${Date.now()}`;
+        $('resultVideo').hidden = false;
+        return;
+      }
+      if (job.status === 'failed') {
+        $('generateButton').disabled = false;
+        $('jobError').textContent = job.error || 'Render thất bại';
+        return;
+      }
+      setTimeout(() => pollJob(jobId), 2000);
+    } catch (e) {
+      $('generateButton').disabled = false;
+      $('jobError').textContent = e.message;
+    }
+  }
+
+  loadHealth();
+  loadCharacters();
+</script>
+</body>
+</html>
