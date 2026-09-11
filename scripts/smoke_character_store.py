@@ -42,10 +42,28 @@ def main() -> None:
 
         assert created.character_id == "loc-main"
         assert created.reference_count == 3
+        assert created.look_count == 0
         assert created.voice == "vi-VN-NamMinhNeural"
         assert len(created.reference_images) == 3
         assert store.get_master_image("loc-main").exists()
+        assert store.get_render_image("loc-main").exists()
         assert store.get_default_voice("loc-main") == "vi-VN-NamMinhNeural"
+
+        look = store.add_look(
+            character_id="loc-main",
+            look_id="desk-gray",
+            name="Desk Gray Tee",
+            image_file=make_image((180, 180, 180)),
+        )
+        assert look.look_id == "desk-gray"
+        assert look.image_url.endswith("/looks/desk-gray.png")
+        assert store.get_render_image("loc-main", "desk-gray").exists()
+
+        loaded = store.get("loc-main")
+        assert loaded.look_count == 1
+        assert len(loaded.looks) == 1
+        assert loaded.looks[0].name == "Desk Gray Tee"
+        assert len(store.list_looks("loc-main")) == 1
         assert len(store.list()) == 1
 
     print("CharacterStore smoke test OK")
