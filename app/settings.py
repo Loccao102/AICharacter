@@ -21,9 +21,15 @@ class Settings(BaseSettings):
     musetalk_python: Path = ROOT / "external" / "MuseTalk" / ".venv" / "Scripts" / "python.exe"
     musetalk_result_dir: Path = Path("results/aicharacter")
 
+    vieneu_python: Path = ROOT / "external" / "vieneu" / ".venv" / "Scripts" / "python.exe"
+    vieneu_backend: str = "onnx"
+    vieneu_preset_voice: str = ""
+    vieneu_timeout_sec: int = 900
+
     ffmpeg_bin: str = "ffmpeg"
     ffmpeg_dir: str = ""
 
+    # Edge TTS is retained only as an explicit compatibility fallback.
     edge_tts_voice: str = "vi-VN-NamMinhNeural"
     edge_tts_rate: str = "+5%"
     edge_tts_volume: str = "+0%"
@@ -51,6 +57,10 @@ class Settings(BaseSettings):
     @property
     def web_dir(self) -> Path:
         return ROOT / "app" / "web"
+
+    @property
+    def vieneu_worker(self) -> Path:
+        return ROOT / "scripts" / "vieneu_worker.py"
 
     def ensure_runtime_dirs(self) -> None:
         self.characters_dir.mkdir(parents=True, exist_ok=True)
