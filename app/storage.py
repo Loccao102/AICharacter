@@ -6,7 +6,7 @@ from typing import BinaryIO, Iterable
 
 from PIL import Image
 
-from app.schemas import CharacterInfo, CharacterLookInfo
+from app.schemas import CharacterInfo, CharacterLookInfo, VoiceProfileInfo
 from app.settings import Settings
 
 
@@ -112,6 +112,8 @@ class CharacterStore:
                 "name": name.strip() or character_id,
                 "master_image": "master.png",
                 "voice": voice.strip(),
+                "voice_engine": "",
+                "voice_profile": None,
                 "persona": persona.strip(),
                 "source_type": source_type.strip() or "self_avatar",
                 "references": reference_names,
@@ -134,6 +136,21 @@ class CharacterStore:
             source_type=item.get("source_type", "upload"),
         )
 
+    def _voice_info(self, character_id: str, item: dict | None) -> VoiceProfileInfo | None:
+        if not item:
+            return None
+        reference_file = item.get("reference_file", "reference.wav")
+        source_file = item.get("source_file", "source.wav")
+        return VoiceProfileInfo(
+            engine=item.get("engine", "vieneu"),
+            name=item.get("name", "Main voice"),
+            reference_audio_url=f"/characters/{character_id}/voice/{reference_file}",
+            source_audio_url=f"/characters/{character_id}/voice/{source_file}",
+            reference_text=item.get("reference_text", ""),
+            source_duration_sec=float(item.get("source_duration_sec", 0.0) or 0.0),
+            reference_duration_sec=float(item.get("reference_duration_sec", 0.0) or 0.0),
+        )
+
     def get(self, character_id: str) -> CharacterInfo:
         metadata = self._read_metadata(character_id)
         reference_names = metadata.get("references") or []
@@ -142,7 +159,6 @@ class CharacterStore:
             for name in reference_names
         ]
 
-        # Backward compatible với character V1 chỉ có master.png.
         if not reference_urls:
             reference_urls = [f"/characters/{metadata['character_id']}/master.png"]
 
@@ -151,12 +167,16 @@ class CharacterStore:
             for item in metadata.get("looks", [])
             if item.get("look_id")
         ]
+        voice_clone = self._voice_info(metadata["character_id"], metadata.get("voice_profile"))
 
         return CharacterInfo(
             character_id=metadata["character_id"],
             name=metadata["name"],
             image_url=f"/characters/{metadata['character_id']}/{metadata.get('master_image', 'master.png')}",
             voice=metadata.get("voice", ""),
+            voice_engine=metadata.get("voice_engine", voice_clone.engine if voice_clone else ""),
+            voice_clone=voice_clone,
+            has_voice_clone=voice_clone is not None,
             persona=metadata.get("persona", ""),
             source_type=metadata.get("source_type", "self_avatar"),
             reference_images=reference_urls,
@@ -198,6 +218,59 @@ class CharacterStore:
         metadata["looks"] = looks
         self._write_metadata(character_id, metadata)
         return self._look_info(character_id, item)
+
+    def set_voice_profile(
+        self,
+        character_id: str,
+        *,
+        source_wav: Path,
+        reference_wav: Path,
+        reference_text: str,
+        source_duration_sec: float,
+        reference_duration_sec: float,
+        name: str = "Main voice",
+    ) -> VoiceProfileInfo:
+        metadata = self._read_metadata(character_id)
+        character_id = metadata["character_id"]
+        voice_dir = self._dir(character_id) / "voice"
+        voice_dir.mkdir(parents=True, exist_ok=True)
+
+        source_destination = voice_dir / "source.wav"
+        reference_destination = voice_dir / "reference.wav"
+        shutil.copy2(source_wav, source_destination)
+        shutil.copy2(reference_wav, reference_destination)
+
+        item = {
+            "engine": "vieneu",
+            "name": name.strip() or "Main voice",
+            "source_file": "source.wav",
+            "reference_file": "reference.wav",
+            "reference_text": reference_text.strip(),
+            "source_duration_sec": round(float(source_duration_sec), 3),
+            "reference_duration_sec": round(float(reference_duration_sec), 3),
+        }
+        metadata["voice_engine"] = "vieneu"
+        metadata["voice_profile"] = item
+        metadata["voice"] = "vieneu:clone"
+        self._write_metadata(character_id, metadata)
+        return self._voice_info(character_id, item)  # type: ignore[return-value]
+
+    def get_voice_profile(self, character_id: str) -> VoiceProfileInfo | None:
+        return self.get(character_id).voice_clone
+
+    def get_voice_reference(self, character_id: str) -> tuple[Path, str] | None:
+        metadata = self._read_metadata(character_id)
+        item = metadata.get("voice_profile")
+        if not item:
+            return None
+        filename = item.get("reference_file", "reference.wav")
+        path = self._dir(metadata["character_id"]) / "voice" / filename
+        if not path.exists():
+            raise FileNotFoundError(f"Voice reference của character '{character_id}' không tồn tại")
+        reference_text = (item.get("reference_text") or "").strip()
+        if not reference_text:
+            raise ValueError("Voice profile thiếu transcript reference")
+        return path, reference_text
 
     def list_looks(self, character_id: str) -> list[CharacterLookInfo]:
         return self.get(character_id).looks
