@@ -8,7 +8,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MUSE = ROOT / "external" / "MuseTalk"
+MODELS = MUSE / "models"
 MUSE_PYTHON = MUSE / ".venv" / "Scripts" / "python.exe"
+
+REQUIRED_WEIGHTS = {
+    "musetalk_v15_unet": MODELS / "musetalkV15" / "unet.pth",
+    "musetalk_v15_config": MODELS / "musetalkV15" / "musetalk.json",
+    "sd_vae_config": MODELS / "sd-vae" / "config.json",
+    "sd_vae_model": MODELS / "sd-vae" / "diffusion_pytorch_model.bin",
+    "whisper_config": MODELS / "whisper" / "config.json",
+    "whisper_model": MODELS / "whisper" / "pytorch_model.bin",
+    "whisper_preprocessor": MODELS / "whisper" / "preprocessor_config.json",
+    "dwpose": MODELS / "dwpose" / "dw-ll_ucoco_384.pth",
+    "syncnet": MODELS / "syncnet" / "latentsync_syncnet.pt",
+    "face_parser": MODELS / "face-parse-bisent" / "79999_iter.pth",
+    "face_parser_resnet": MODELS / "face-parse-bisent" / "resnet18-5c106cde.pth",
+}
 
 
 def check_command(name: str) -> dict:
@@ -50,35 +65,51 @@ def check_musetalk_python() -> dict:
     return {"ok": True, **json.loads(run.stdout.strip())}
 
 
+def check_weights() -> dict:
+    result: dict[str, dict] = {}
+    for name, path in REQUIRED_WEIGHTS.items():
+        exists = path.exists() and path.stat().st_size > 0
+        result[name] = {
+            "ok": exists,
+            "path": str(path.relative_to(MUSE)),
+            "size_mb": round(path.stat().st_size / 1024**2, 1) if exists else 0,
+        }
+    return result
+
+
 def main() -> int:
+    weights = check_weights()
     checks = {
         "python": sys.version.split()[0],
         "ffmpeg": check_command("ffmpeg"),
         "musetalk_repo": (MUSE / "scripts" / "inference.py").exists(),
-        "musetalk_unet": (MUSE / "models" / "musetalkV15" / "unet.pth").exists(),
+        "weights_ok": all(item["ok"] for item in weights.values()),
+        "weights": weights,
         "musetalk_python": check_musetalk_python(),
     }
     print(json.dumps(checks, ensure_ascii=False, indent=2))
 
     errors = []
     if not checks["ffmpeg"]["ok"]:
-        errors.append("FFmpeg chưa có trong PATH")
+        errors.append("FFmpeg chua co trong PATH")
     if not checks["musetalk_repo"]:
-        errors.append("Chưa clone MuseTalk")
-    if not checks["musetalk_unet"]:
-        errors.append("Chưa tải MuseTalk 1.5 weights")
+        errors.append("Chua co MuseTalk source")
+    if not checks["weights_ok"]:
+        missing = [name for name, item in weights.items() if not item["ok"]]
+        errors.append("Thieu MuseTalk weights: " + ", ".join(missing))
     if not checks["musetalk_python"]["ok"]:
-        errors.append("MuseTalk Python environment chưa sẵn sàng")
+        errors.append("MuseTalk Python environment chua san sang")
     elif not checks["musetalk_python"].get("cuda"):
-        errors.append("PyTorch trong MuseTalk không nhìn thấy CUDA")
+        errors.append("PyTorch trong MuseTalk khong nhin thay CUDA")
 
     if errors:
-        print("\nCẦN XỬ LÝ:")
+        print("\nCAN XU LY:")
         for item in errors:
             print(f"- {item}")
+        print("\nRun: .\\scripts\\download_musetalk_weights.ps1")
         return 1
 
-    print("\nOK: môi trường cơ bản đã sẵn sàng để chạy V1.")
+    print("\nOK: MuseTalk 1.5 environment and all required weights are ready.")
     return 0
 
 
