@@ -1,5 +1,6 @@
 import asyncio
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Callable
 
@@ -28,6 +29,32 @@ class RenderPipeline:
             "Bấm vào sản phẩm để kiểm tra giá thực tế của tài khoản bạn nhé."
         )
 
+    def _to_wav(self, source: Path, destination: Path, work_dir: Path) -> None:
+        command = [
+            self.settings.ffmpeg_bin,
+            "-y",
+            "-i",
+            str(source.resolve()),
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            str(destination.resolve()),
+        ]
+        completed = subprocess.run(
+            command,
+            cwd=work_dir,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if completed.returncode != 0 or not destination.exists():
+            raise RuntimeError(
+                "Không convert được TTS sang WAV. Kiểm tra FFmpeg trong PATH.\n"
+                + completed.stderr[-1500:]
+            )
+
     def render(
         self,
         job_id: str,
@@ -49,23 +76,25 @@ class RenderPipeline:
         )
         (work_dir / "script.txt").write_text(script, encoding="utf-8")
 
-        audio_path = work_dir / "speech.mp3"
+        audio_mp3 = work_dir / "speech.mp3"
+        audio_wav = work_dir / "speech.wav"
         subtitle_path = work_dir / "captions.srt"
 
         update(15, "Đang tạo giọng nói tiếng Việt")
         asyncio.run(
             self.tts.synthesize(
                 text=script,
-                audio_path=audio_path,
+                audio_path=audio_mp3,
                 subtitle_path=subtitle_path,
                 voice=voice,
             )
         )
+        self._to_wav(audio_mp3, audio_wav, work_dir)
 
         update(35, "Đang lip-sync nhân vật bằng MuseTalk")
         talking_video = self.musetalk.generate(
             character_image=character_image,
-            audio_path=audio_path,
+            audio_path=audio_wav,
             work_dir=work_dir,
         )
 
