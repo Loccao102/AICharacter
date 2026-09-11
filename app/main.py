@@ -1,4 +1,5 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -7,8 +8,9 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 from app.job_manager import JobManager
-from app.schemas import CharacterInfo, CharacterLookInfo, JobInfo
+from app.schemas import CharacterInfo, CharacterLookInfo, JobInfo, VoiceProfileInfo
 from app.services.pipeline import RenderPipeline
+from app.services.voice_profile import VoiceReferencePreparer
 from app.settings import get_settings
 from app.storage import CharacterStore
 
@@ -17,8 +19,9 @@ settings = get_settings()
 store = CharacterStore(settings)
 jobs = JobManager(max_workers=settings.max_gpu_workers)
 pipeline = RenderPipeline(settings)
+voice_preparer = VoiceReferencePreparer(settings)
 
-app = FastAPI(title="AICharacter", version="0.3.0")
+app = FastAPI(title="AICharacter", version="0.4.0")
 app.mount("/outputs", StaticFiles(directory=settings.outputs_dir), name="outputs")
 app.mount("/characters", StaticFiles(directory=settings.characters_dir), name="characters")
 
@@ -51,6 +54,9 @@ def health() -> dict:
         "musetalk_weights": (root / "models" / "musetalkV15" / "unet.pth").exists(),
         "musetalk_python": str(settings.musetalk_python),
         "musetalk_python_exists": settings.musetalk_python.exists(),
+        "vieneu_python": str(settings.vieneu_python),
+        "vieneu_python_exists": settings.vieneu_python.exists(),
+        "vieneu_backend": settings.vieneu_backend,
         "ffmpeg": settings.ffmpeg_bin,
         "fp16": settings.use_fp16,
         "batch_size": settings.gpu_batch_size,
@@ -80,7 +86,6 @@ def create_character(
     images: list[UploadFile] | None = File(None),
     image: UploadFile | None = File(None),
 ) -> CharacterInfo:
-    # `image` giữ compatibility với API V1; UI V2+ gửi 1-5 file qua `images`.
     uploads = list(images or [])
     if not uploads and image is not None:
         uploads = [image]
@@ -146,6 +151,48 @@ def create_character_look(
         raise HTTPException(status_code=400, detail=f"Không thể lưu look: {exc}") from exc
 
 
+@app.post(
+    "/api/characters/{character_id}/voice",
+    response_model=VoiceProfileInfo,
+)
+def create_character_voice(
+    character_id: str,
+    audio: UploadFile = File(...),
+    reference_text: str = Form(...),
+    name: str = Form("Main voice"),
+) -> VoiceProfileInfo:
+    transcript = reference_text.strip()
+    if len(transcript) < 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Cần transcript đúng với đoạn reference 3–8 giây để clone giọng ổn định",
+        )
+
+    try:
+        store.get(character_id)
+        with TemporaryDirectory(prefix="aicharacter-voice-") as temp:
+            prepared = voice_preparer.prepare(
+                input_file=audio.file,
+                original_name=audio.filename or "voice.wav",
+                work_dir=Path(temp),
+            )
+            return store.set_voice_profile(
+                character_id,
+                source_wav=prepared.source_wav,
+                reference_wav=prepared.reference_wav,
+                reference_text=transcript,
+                source_duration_sec=prepared.source_duration_sec,
+                reference_duration_sec=prepared.reference_duration_sec,
+                name=name,
+            )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Không thể tạo voice profile: {exc}") from exc
+
+
 @app.post("/api/videos", response_model=JobInfo)
 def create_video(
     character_id: str = Form(...),
@@ -165,12 +212,25 @@ def create_video(
     try:
         character = store.get(character_id)
         character_image = store.get_render_image(character_id, look_id.strip() or None)
+        stored_voice_reference = store.get_voice_reference(character_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    selected_voice = voice.strip() or character.voice.strip() or None
+    override_voice = voice.strip()
+    selected_voice = override_voice or character.voice.strip() or None
+    voice_reference: Path | None = None
+    voice_reference_text = ""
+
+    # Clone is the default when a character owns a local voice profile. A concrete
+    # override such as vieneu:<preset> or edge:<voice> intentionally bypasses it.
+    wants_clone = not override_voice or override_voice == "vieneu:clone"
+    if wants_clone and stored_voice_reference is not None:
+        voice_reference, voice_reference_text = stored_voice_reference
+        selected_voice = "vieneu:clone"
+    elif override_voice == "vieneu:clone" and stored_voice_reference is None:
+        raise HTTPException(status_code=400, detail="Character chưa có voice clone")
 
     job_id = uuid4().hex
     work_dir = settings.jobs_dir / job_id
@@ -190,6 +250,8 @@ def create_video(
             buy_price=buy_price,
             script=script,
             voice=selected_voice,
+            voice_reference=voice_reference,
+            voice_reference_text=voice_reference_text,
             update=update,
         )
 
