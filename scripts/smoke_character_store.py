@@ -2,6 +2,11 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from PIL import Image
 
@@ -25,7 +30,11 @@ def main() -> None:
         created = store.create(
             character_id="loc-main",
             name="Loc Tech",
-            image_files=[make_image((20, 20, 20)), make_image((80, 80, 80)), make_image((140, 140, 140))],
+            image_files=[
+                make_image((20, 20, 20)),
+                make_image((80, 80, 80)),
+                make_image((140, 140, 140)),
+            ],
             primary_index=1,
             voice="vi-VN-NamMinhNeural",
             persona="KOC tech tự nhiên",
