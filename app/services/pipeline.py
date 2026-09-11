@@ -1,12 +1,10 @@
-import asyncio
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Callable
 
 from app.services.composer import VideoComposer, format_vnd
 from app.services.musetalk import MuseTalkService
-from app.services.tts import EdgeTTSService
+from app.services.tts import HybridTTSService
 from app.settings import Settings
 
 
@@ -16,7 +14,7 @@ ProgressCallback = Callable[[int, str], None]
 class RenderPipeline:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.tts = EdgeTTSService(settings)
+        self.tts = HybridTTSService(settings)
         self.musetalk = MuseTalkService(settings)
         self.composer = VideoComposer(settings)
 
@@ -29,32 +27,6 @@ class RenderPipeline:
             "Bấm vào sản phẩm để kiểm tra giá thực tế của tài khoản bạn nhé."
         )
 
-    def _to_wav(self, source: Path, destination: Path, work_dir: Path) -> None:
-        command = [
-            self.settings.ffmpeg_bin,
-            "-y",
-            "-i",
-            str(source.resolve()),
-            "-ac",
-            "1",
-            "-ar",
-            "16000",
-            str(destination.resolve()),
-        ]
-        completed = subprocess.run(
-            command,
-            cwd=work_dir,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        if completed.returncode != 0 or not destination.exists():
-            raise RuntimeError(
-                "Không convert được TTS sang WAV. Kiểm tra FFmpeg trong PATH.\n"
-                + completed.stderr[-1500:]
-            )
-
     def render(
         self,
         job_id: str,
@@ -65,6 +37,8 @@ class RenderPipeline:
         buy_price: int,
         script: str | None,
         voice: str | None,
+        voice_reference: Path | None,
+        voice_reference_text: str,
         update: ProgressCallback,
     ) -> str:
         work_dir = self.settings.jobs_dir / job_id
@@ -76,20 +50,23 @@ class RenderPipeline:
         )
         (work_dir / "script.txt").write_text(script, encoding="utf-8")
 
-        audio_mp3 = work_dir / "speech.mp3"
         audio_wav = work_dir / "speech.wav"
         subtitle_path = work_dir / "captions.srt"
 
-        update(15, "Đang tạo giọng nói tiếng Việt")
-        asyncio.run(
-            self.tts.synthesize(
-                text=script,
-                audio_path=audio_mp3,
-                subtitle_path=subtitle_path,
-                voice=voice,
-            )
+        if voice_reference is not None:
+            update(15, "Đang clone giọng bằng VieNeu-TTS local")
+        else:
+            update(15, "Đang tạo giọng nói bằng TTS local")
+
+        engine = self.tts.synthesize(
+            text=script,
+            audio_wav=audio_wav,
+            subtitle_path=subtitle_path,
+            voice=voice,
+            reference_audio=voice_reference,
+            reference_text=voice_reference_text,
         )
-        self._to_wav(audio_mp3, audio_wav, work_dir)
+        (work_dir / "tts-engine.txt").write_text(engine, encoding="utf-8")
 
         update(35, "Đang lip-sync nhân vật bằng MuseTalk")
         talking_video = self.musetalk.generate(
@@ -111,7 +88,6 @@ class RenderPipeline:
             work_dir=work_dir,
         )
 
-        # Giữ log/script nhưng bỏ những frame/temp lớn do worker tạo nếu có.
         for candidate in (work_dir / "musetalk_results",):
             if candidate.exists():
                 shutil.rmtree(candidate, ignore_errors=True)
