@@ -97,7 +97,5 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "MuseTalk environment setup completed." -ForegroundColor Green
 Write-Host "Next commands:"
-Write-Host "  cd external\MuseTalk"
-Write-Host "  .\download_weights.bat"
-Write-Host "  cd ..\.."
+Write-Host "  .\scripts\download_musetalk_weights.ps1"
 Write-Host "  .\.venv\Scripts\python.exe scripts\verify_system.py"
