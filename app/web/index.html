@@ -7,134 +7,156 @@
   <style>
     :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
     * { box-sizing: border-box; }
-    body { margin: 0; background: #0a0c10; color: #eef1f6; }
-    main { width: min(1240px, calc(100% - 32px)); margin: 32px auto 80px; }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
-    h1 { margin: 0; font-size: 32px; }
-    h2 { margin: 0 0 18px; font-size: 20px; }
-    h3 { margin: 22px 0 10px; font-size: 15px; color: #d4dae4; }
-    code { color: #cbd4ff; }
-    .muted { color: #9aa3b2; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-    .card { background: #12161d; border: 1px solid #242b36; border-radius: 18px; padding: 22px; }
-    label { display: grid; gap: 7px; font-size: 14px; color: #c5cbd5; margin-bottom: 14px; }
-    input, textarea, select, button { font: inherit; }
-    input, textarea, select { width: 100%; border: 1px solid #303847; background: #0c1016; color: #fff; border-radius: 10px; padding: 11px 12px; outline: none; }
-    input:focus, textarea:focus, select:focus { border-color: #7686ff; }
-    textarea { min-height: 96px; resize: vertical; }
-    button { border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer; background: #eef1f6; color: #0a0c10; font-weight: 700; }
-    button.secondary { background: #202733; color: #eef1f6; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; border: 1px solid #2c3440; padding: 8px 10px; border-radius: 999px; color: #b8c0cc; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #687386; }
-    .dot.ok { background: #43d17a; }
-    .dot.warn { background: #f0b44f; }
-    .note { background: #0c1016; border: 1px solid #242b36; border-radius: 12px; padding: 12px; font-size: 13px; line-height: 1.55; color: #aeb7c5; margin-bottom: 18px; }
-    .preview-grid { display: grid; grid-template-columns: repeat(5, minmax(72px, 1fr)); gap: 8px; margin: 10px 0 16px; }
-    .preview { position: relative; border: 2px solid transparent; border-radius: 12px; overflow: hidden; background: #0c1016; cursor: pointer; min-height: 94px; }
-    .preview.selected { border-color: #7d8cff; }
-    .preview img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
-    .preview span { display: block; padding: 6px; font-size: 11px; text-align: center; color: #aeb7c5; }
-    .preview.selected span { color: #fff; font-weight: 700; }
-    .characters, .looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 10px; margin-top: 12px; }
-    .character, .look { border: 1px solid #29313d; border-radius: 12px; overflow: hidden; background: #0d1117; cursor: pointer; transition: border-color .2s, transform .2s; }
-    .character:hover, .look:hover { border-color: #59677c; transform: translateY(-1px); }
-    .character.selected, .look.selected { border-color: #7d8cff; }
-    .character img, .look img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
-    .meta { padding: 9px; font-size: 12px; line-height: 1.45; }
-    .pill { display: inline-block; margin: 6px 5px 0 0; padding: 3px 6px; border-radius: 999px; background: #202733; color: #bfc7d4; font-size: 10px; }
-    .divider { height: 1px; background: #272e39; margin: 24px 0; }
-    .job { margin-top: 20px; border-top: 1px solid #2a313d; padding-top: 18px; }
-    .progress { height: 8px; background: #252c36; border-radius: 999px; overflow: hidden; margin: 10px 0; }
-    .progress > div { height: 100%; width: 0; background: #dfe4ee; transition: width .3s ease; }
-    video { width: 100%; max-height: 620px; margin-top: 16px; border-radius: 14px; background: #000; }
-    .error { color: #ff8b8b; white-space: pre-wrap; }
-    .success { color: #62db91; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } .preview-grid { grid-template-columns: repeat(3, 1fr); } }
+    body { margin: 0; background: #090b0f; color: #eef1f6; }
+    main { width: min(1280px, calc(100% - 32px)); margin: 30px auto 80px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; }
+    h1 { margin:0; font-size:32px; }
+    h2 { margin:0 0 16px; font-size:20px; }
+    h3 { margin:20px 0 10px; font-size:15px; color:#d6dce6; }
+    .muted { color:#99a3b2; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+    .card { background:#12161d; border:1px solid #252c36; border-radius:18px; padding:22px; }
+    .section { padding-bottom:22px; margin-bottom:22px; border-bottom:1px solid #282f39; }
+    .section:last-child { border-bottom:0; margin-bottom:0; }
+    .note { background:#0c1016; border:1px solid #242c37; border-radius:12px; padding:12px; font-size:13px; line-height:1.55; color:#aeb7c5; margin-bottom:16px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    label { display:grid; gap:7px; font-size:14px; color:#c7ced8; margin-bottom:13px; }
+    input, textarea, select, button { font:inherit; }
+    input, textarea, select { width:100%; border:1px solid #303947; background:#0c1016; color:#fff; border-radius:10px; padding:11px 12px; outline:none; }
+    input:focus, textarea:focus, select:focus { border-color:#7d8cff; }
+    textarea { min-height:92px; resize:vertical; }
+    button { border:0; border-radius:10px; padding:12px 16px; cursor:pointer; background:#eef1f6; color:#0a0c10; font-weight:700; }
+    button.secondary { background:#212834; color:#eef1f6; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .status { display:inline-flex; align-items:center; gap:8px; border:1px solid #2d3541; border-radius:999px; padding:8px 10px; font-size:13px; color:#b9c1cd; }
+    .dot { width:8px; height:8px; border-radius:50%; background:#687386; }
+    .dot.ok { background:#43d17a; }
+    .dot.warn { background:#f0b44f; }
+    .preview-grid { display:grid; grid-template-columns:repeat(5,minmax(72px,1fr)); gap:8px; margin:10px 0 14px; }
+    .preview { border:2px solid transparent; border-radius:12px; overflow:hidden; background:#0c1016; cursor:pointer; }
+    .preview.selected { border-color:#7d8cff; }
+    .preview img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+    .preview span { display:block; padding:6px; font-size:11px; text-align:center; color:#aeb7c5; }
+    .preview.selected span { color:#fff; font-weight:700; }
+    .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:10px; margin-top:12px; }
+    .tile { border:1px solid #29313d; border-radius:12px; overflow:hidden; background:#0d1117; cursor:pointer; transition:.2s; }
+    .tile:hover, .tile.selected { border-color:#7d8cff; }
+    .tile img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+    .meta { padding:9px; font-size:12px; line-height:1.45; }
+    .pill { display:inline-block; margin:6px 5px 0 0; padding:3px 6px; border-radius:999px; background:#202733; color:#c1c9d5; font-size:10px; }
+    .success { color:#62db91; }
+    .error { color:#ff8b8b; white-space:pre-wrap; }
+    audio { width:100%; margin-top:8px; }
+    video { width:100%; max-height:620px; margin-top:16px; border-radius:14px; background:#000; }
+    .job { margin-top:20px; border-top:1px solid #2a313d; padding-top:18px; }
+    .progress { height:8px; background:#252c36; border-radius:999px; overflow:hidden; margin:10px 0; }
+    .progress > div { height:100%; width:0; background:#dfe4ee; transition:width .3s ease; }
+    code { color:#cbd4ff; }
+    @media (max-width:900px) { .grid,.row { grid-template-columns:1fr; } .preview-grid { grid-template-columns:repeat(3,1fr); } }
   </style>
 </head>
 <body>
 <main>
   <header>
     <div>
-      <h1>AICharacter <span class="muted" style="font-size:14px">V2.1</span></h1>
-      <div class="muted">Một identity cố định → nhiều Looks → dùng lại cho mọi video affiliate</div>
+      <h1>AICharacter <span class="muted" style="font-size:14px">V2.2</span></h1>
+      <div class="muted">Face Identity + Multiple Looks + Local Voice Identity + MuseTalk</div>
     </div>
     <div class="status"><span id="healthDot" class="dot"></span><span id="healthText">Đang kiểm tra...</span></div>
   </header>
 
   <div class="grid">
     <section class="card">
-      <h2>1. Character Identity</h2>
-      <div class="note">
-        Upload <strong>1–5 ảnh của cùng một người</strong>. Chọn một ảnh làm master. Character được lưu bằng <code>character_id</code> và có thể dùng lại mãi cho các video sau.
-      </div>
-      <form id="characterForm">
-        <div class="row">
-          <label>Character ID
-            <input name="character_id" placeholder="loc-main" required pattern="[a-zA-Z0-9_-]{2,49}" />
+      <div class="section">
+        <h2>1. Character Identity</h2>
+        <div class="note">Upload 1–5 ảnh cùng một người. Click thumbnail để chọn ảnh master dùng cho lip-sync mặc định.</div>
+        <form id="characterForm">
+          <div class="row">
+            <label>Character ID
+              <input name="character_id" placeholder="loc-main" required pattern="[a-zA-Z0-9_-]{2,49}" />
+            </label>
+            <label>Tên hiển thị
+              <input name="name" placeholder="Loc Tech" required />
+            </label>
+          </div>
+          <label>Ảnh reference
+            <input id="characterImages" name="images" type="file" accept="image/*" multiple required />
           </label>
-          <label>Tên hiển thị
-            <input name="name" placeholder="Loc Tech" required />
+          <input id="primaryIndex" name="primary_index" type="hidden" value="0" />
+          <div id="imagePreviews" class="preview-grid"></div>
+          <label>Voice mặc định <span class="muted">(để trống = VieNeu local)</span>
+            <input name="voice" placeholder="vieneu:clone hoặc vieneu:<preset>" />
           </label>
-        </div>
-        <label>Ảnh reference (1–5 ảnh)
-          <input id="characterImages" name="images" type="file" accept="image/*" multiple required />
-        </label>
-        <input id="primaryIndex" name="primary_index" type="hidden" value="0" />
-        <div id="imagePreviews" class="preview-grid"></div>
-        <div class="muted" style="font-size:12px;margin:-6px 0 14px">Click thumbnail để chọn ảnh MASTER.</div>
-        <label>Giọng mặc định
-          <input name="voice" value="vi-VN-NamMinhNeural" placeholder="vi-VN-NamMinhNeural" />
-        </label>
-        <label>Persona / cách nói
-          <textarea name="persona" placeholder="KOC tech Việt Nam, nói tự nhiên, ngắn, tập trung vào giá; không quảng cáo quá đà."></textarea>
-        </label>
-        <button type="submit">Tạo character cố định</button>
-        <span id="characterMessage" class="muted" style="margin-left:10px"></span>
-      </form>
+          <label>Persona
+            <textarea name="persona" placeholder="Nói tự nhiên, nhanh vừa phải, câu ngắn, không quảng cáo quá đà."></textarea>
+          </label>
+          <button type="submit">Tạo character</button>
+          <span id="characterMessage" class="muted" style="margin-left:10px"></span>
+        </form>
 
-      <h3>Character Library</h3>
-      <div id="characters" class="characters"></div>
-
-      <div class="divider"></div>
-      <h2>2. Multiple Looks</h2>
-      <div class="note">
-        Một Look là một ảnh khác của <strong>cùng character</strong>: hoodie, áo thun, ngồi bàn, đứng, close-up... Khi render bạn chọn Look; nếu không chọn, hệ thống dùng master face.
+        <h3>Character Library</h3>
+        <div id="characters" class="gallery"></div>
       </div>
-      <form id="lookForm">
-        <label>Character
-          <select id="lookCharacterSelect" required></select>
-        </label>
-        <div class="row">
-          <label>Look ID
-            <input name="look_id" placeholder="desk-gray" required pattern="[a-zA-Z0-9_-]{2,49}" />
+
+      <div class="section">
+        <h2>2. Multiple Looks</h2>
+        <div class="note">Thêm nhiều outfit/bối cảnh cho cùng character. Nếu không chọn Look, video dùng master face.</div>
+        <form id="lookForm">
+          <label>Character
+            <select id="lookCharacterSelect" required></select>
           </label>
-          <label>Tên Look
-            <input name="name" placeholder="Desk · Gray Tee" required />
+          <div class="row">
+            <label>Look ID
+              <input name="look_id" placeholder="desk-gray" required pattern="[a-zA-Z0-9_-]{2,49}" />
+            </label>
+            <label>Tên Look
+              <input name="name" placeholder="Desk · Gray Tee" required />
+            </label>
+          </div>
+          <label>Ảnh Look
+            <input name="image" type="file" accept="image/*" required />
           </label>
+          <button type="submit" class="secondary">Thêm Look</button>
+          <span id="lookMessage" class="muted" style="margin-left:10px"></span>
+        </form>
+        <div id="looks" class="gallery"></div>
+      </div>
+
+      <div class="section">
+        <h2>3. Voice Identity · VieNeu local</h2>
+        <div class="note">
+          Upload giọng của chính bạn. V1 lưu toàn bộ source và tự lấy <strong>tối đa 8 giây đầu có tiếng</strong> làm clone reference. Transcript bên dưới phải khớp với chính đoạn reference 3–8 giây đó. Không dùng API trả phí.
         </div>
-        <label>Ảnh Look
-          <input name="image" type="file" accept="image/*" required />
-        </label>
-        <button type="submit" class="secondary">Thêm Look</button>
-        <span id="lookMessage" class="muted" style="margin-left:10px"></span>
-      </form>
-      <div id="looks" class="looks"></div>
+        <form id="voiceForm">
+          <label>Character
+            <select id="voiceCharacterSelect" required></select>
+          </label>
+          <label>Tên voice
+            <input name="name" value="Main voice" />
+          </label>
+          <label>Audio <span class="muted">(.wav/.mp3/.m4a, 3 giây–5 phút)</span>
+            <input name="audio" type="file" accept="audio/*,video/mp4" required />
+          </label>
+          <label>Transcript của đoạn 3–8 giây được dùng làm reference
+            <textarea name="reference_text" required placeholder="Ví dụ: Chào mọi người, mình là Lộc và hôm nay mình sẽ thử một cách làm video mới."></textarea>
+          </label>
+          <button type="submit">Lưu & clone voice local</button>
+          <span id="voiceMessage" class="muted" style="margin-left:10px"></span>
+        </form>
+        <div id="voiceInfo" class="note" style="display:none"></div>
+        <audio id="voiceAudio" controls hidden></audio>
+      </div>
     </section>
 
     <section class="card">
-      <h2>3. Generate video</h2>
-      <div class="note">Chọn character + Look. Tất cả video vẫn thuộc cùng identity; Look chỉ thay ảnh đầu vào cho MuseTalk.</div>
+      <h2>4. Generate video</h2>
+      <div class="note">Nếu character có Voice Identity, để trống Override Voice sẽ tự dùng giọng clone VieNeu. GPU RTX chỉ tập trung cho MuseTalk; VieNeu chạy ONNX/CPU.</div>
       <form id="videoForm">
         <label>Character
           <select id="characterSelect" name="character_id" required></select>
         </label>
         <label>Look
-          <select id="lookSelect" name="look_id">
-            <option value="">Master face</option>
-          </select>
+          <select id="lookSelect" name="look_id"><option value="">Master face</option></select>
         </label>
         <div id="selectedCharacter" class="note" style="display:none"></div>
         <label>Tên sản phẩm
@@ -151,10 +173,10 @@
         <label>Ảnh sản phẩm
           <input name="product_image" type="file" accept="image/*" required />
         </label>
-        <label>Override giọng <span class="muted">(để trống = dùng giọng character)</span>
-          <input id="videoVoice" name="voice" placeholder="Dùng voice đã lưu của character" />
+        <label>Override Voice <span class="muted">(thường để trống)</span>
+          <input id="videoVoice" name="voice" placeholder="vieneu:<preset> hoặc edge:vi-VN-NamMinhNeural" />
         </label>
-        <label>Script <span class="muted">(để trống = tự tạo template)</span>
+        <label>Script <span class="muted">(để trống = template tự động)</span>
           <textarea name="script" placeholder="Nếu mọi người thấy con này xuống khoảng 299 nghìn..."></textarea>
         </label>
         <button id="generateButton" type="submit">Generate video</button>
@@ -170,320 +192,267 @@
     </section>
   </div>
 </main>
+
 <script>
-  const $ = (id) => document.getElementById(id);
-  let characters = [];
+const $ = (id) => document.getElementById(id);
+let characters = [];
 
-  async function request(url, options) {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      let detail = `HTTP ${response.status}`;
-      try { detail = (await response.json()).detail || detail; } catch (_) {}
-      throw new Error(detail);
-    }
-    return response.json();
+async function request(url, options) {
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try { detail = (await response.json()).detail || detail; } catch (_) {}
+    throw new Error(detail);
   }
+  return response.json();
+}
 
-  function text(value) { return document.createTextNode(value ?? ''); }
+function currentCharacter() {
+  return characters.find((x) => x.character_id === $('characterSelect').value);
+}
 
-  async function loadHealth() {
-    try {
-      const h = await request('/api/health');
-      const ready = h.musetalk_cloned && h.musetalk_weights && h.musetalk_python_exists;
-      $('healthDot').className = `dot ${ready ? 'ok' : 'warn'}`;
-      $('healthText').textContent = ready ? `V${h.version} · MuseTalk sẵn sàng` : `V${h.version} · Cần setup MuseTalk/model`;
-    } catch (_) {
-      $('healthText').textContent = 'API lỗi';
-    }
+async function loadHealth() {
+  try {
+    const h = await request('/api/health');
+    const muse = h.musetalk_cloned && h.musetalk_weights && h.musetalk_python_exists;
+    const voice = h.vieneu_python_exists;
+    const ready = muse && voice;
+    $('healthDot').className = `dot ${ready ? 'ok' : 'warn'}`;
+    $('healthText').textContent = `V${h.version} · MuseTalk ${muse ? 'OK' : 'setup'} · VieNeu ${voice ? 'OK' : 'setup'}`;
+  } catch (_) {
+    $('healthText').textContent = 'API lỗi';
   }
+}
 
-  function currentCharacter() {
-    return characters.find((x) => x.character_id === $('characterSelect').value);
+function populateLookSelect(item, preferred = '') {
+  const select = $('lookSelect');
+  select.innerHTML = '<option value="">Master face</option>';
+  for (const look of item?.looks || []) {
+    const option = document.createElement('option');
+    option.value = look.look_id;
+    option.textContent = `${look.name} (${look.look_id})`;
+    select.appendChild(option);
   }
+  if (preferred && item?.looks?.some((x) => x.look_id === preferred)) select.value = preferred;
+  renderLooks(item);
+}
 
-  function renderLooks(item) {
-    const gallery = $('looks');
-    gallery.innerHTML = '';
-    if (!item) {
-      gallery.innerHTML = '<div class="muted">Hãy chọn/tạo character trước.</div>';
-      return;
-    }
-    if (!item.looks?.length) {
-      gallery.innerHTML = '<div class="muted">Character này chưa có Look. Master face vẫn render bình thường.</div>';
-      return;
-    }
-    for (const look of item.looks) {
-      const box = document.createElement('div');
-      box.className = `look ${$('lookSelect').value === look.look_id ? 'selected' : ''}`;
-      box.dataset.lookId = look.look_id;
-      box.addEventListener('click', () => {
-        $('lookSelect').value = look.look_id;
-        renderLooks(item);
-      });
-      const img = document.createElement('img');
-      img.src = `${look.image_url}?t=${Date.now()}`;
-      img.alt = look.name;
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      const strong = document.createElement('strong');
-      strong.appendChild(text(look.name));
-      meta.appendChild(strong);
-      meta.appendChild(document.createElement('br'));
-      const idLine = document.createElement('span');
-      idLine.className = 'muted';
-      idLine.appendChild(text(look.look_id));
-      meta.appendChild(idLine);
-      box.appendChild(img);
-      box.appendChild(meta);
-      gallery.appendChild(box);
-    }
+function renderLooks(item) {
+  const gallery = $('looks');
+  gallery.innerHTML = '';
+  if (!item?.looks?.length) {
+    gallery.innerHTML = '<div class="muted">Chưa có Look.</div>';
+    return;
   }
+  for (const look of item.looks) {
+    const box = document.createElement('div');
+    box.className = `tile ${$('lookSelect').value === look.look_id ? 'selected' : ''}`;
+    box.innerHTML = `<img alt=""><div class="meta"><strong></strong><br><span class="muted"></span></div>`;
+    box.querySelector('img').src = `${look.image_url}?t=${Date.now()}`;
+    box.querySelector('strong').textContent = look.name;
+    box.querySelector('.muted').textContent = look.look_id;
+    box.onclick = () => { $('lookSelect').value = look.look_id; renderLooks(item); };
+    gallery.appendChild(box);
+  }
+}
 
-  function populateLookSelect(item, preferred = '') {
-    const select = $('lookSelect');
-    select.innerHTML = '<option value="">Master face</option>';
-    for (const look of item?.looks || []) {
+function renderVoice(item) {
+  const info = $('voiceInfo');
+  const audio = $('voiceAudio');
+  if (!item?.voice_clone) {
+    info.style.display = 'block';
+    info.textContent = 'Character này chưa có voice clone.';
+    audio.hidden = true;
+    return;
+  }
+  const v = item.voice_clone;
+  info.style.display = 'block';
+  info.textContent = `${v.name} · ${v.engine} · source ${v.source_duration_sec.toFixed(1)}s · reference ${v.reference_duration_sec.toFixed(1)}s`;
+  audio.src = `${v.reference_audio_url}?t=${Date.now()}`;
+  audio.hidden = false;
+}
+
+function syncSelected(preferredLook = '') {
+  const id = $('characterSelect').value;
+  const item = characters.find((x) => x.character_id === id);
+  document.querySelectorAll('.character-tile').forEach((el) => el.classList.toggle('selected', el.dataset.id === id));
+  if (!item) {
+    $('selectedCharacter').style.display = 'none';
+    populateLookSelect(null);
+    renderVoice(null);
+    return;
+  }
+  for (const selector of ['lookCharacterSelect', 'voiceCharacterSelect']) {
+    if ([...$(selector).options].some((o) => o.value === id)) $(selector).value = id;
+  }
+  $('selectedCharacter').style.display = 'block';
+  $('selectedCharacter').textContent = `${item.name} · ${item.reference_count} refs · ${item.look_count} looks · voice: ${item.has_voice_clone ? 'VieNeu clone' : (item.voice || 'VieNeu preset/default')}`;
+  $('videoVoice').placeholder = item.has_voice_clone ? 'Để trống = dùng voice clone' : 'vieneu:<preset> hoặc edge:<voice>';
+  populateLookSelect(item, preferredLook);
+  renderVoice(item);
+}
+
+async function loadCharacters(preferredId = '', preferredLook = '') {
+  characters = await request('/api/characters');
+  const list = $('characters');
+  list.innerHTML = '';
+  const selects = [$('characterSelect'), $('lookCharacterSelect'), $('voiceCharacterSelect')];
+  const old = preferredId || $('characterSelect').value;
+  selects.forEach((s) => s.innerHTML = '');
+
+  for (const item of characters) {
+    const box = document.createElement('div');
+    box.className = 'tile character-tile';
+    box.dataset.id = item.character_id;
+    box.innerHTML = `<img alt=""><div class="meta"><strong></strong><br><span class="muted"></span><br><span class="pill refs"></span><span class="pill looks"></span><span class="pill voice"></span></div>`;
+    box.querySelector('img').src = `${item.image_url}?t=${Date.now()}`;
+    box.querySelector('strong').textContent = item.name;
+    box.querySelector('.muted').textContent = item.character_id;
+    box.querySelector('.refs').textContent = `${item.reference_count} refs`;
+    box.querySelector('.looks').textContent = `${item.look_count} looks`;
+    box.querySelector('.voice').textContent = item.has_voice_clone ? 'voice clone' : 'no clone';
+    box.onclick = () => { $('characterSelect').value = item.character_id; syncSelected(); };
+    list.appendChild(box);
+
+    for (const select of selects) {
       const option = document.createElement('option');
-      option.value = look.look_id;
-      option.textContent = `${look.name} (${look.look_id})`;
+      option.value = item.character_id;
+      option.textContent = `${item.name} (${item.character_id})`;
       select.appendChild(option);
     }
-    if (preferred && item?.looks?.some((x) => x.look_id === preferred)) select.value = preferred;
-    renderLooks(item);
   }
 
-  function updateSelectedCharacter(preferredLook = '') {
-    const id = $('characterSelect').value;
-    const item = characters.find((x) => x.character_id === id);
-    document.querySelectorAll('.character').forEach((el) => el.classList.toggle('selected', el.dataset.id === id));
-
-    if ($('lookCharacterSelect').value !== id && characters.some((x) => x.character_id === id)) {
-      $('lookCharacterSelect').value = id;
-    }
-
-    if (!item) {
-      $('selectedCharacter').style.display = 'none';
-      populateLookSelect(null);
-      return;
-    }
-
-    $('selectedCharacter').style.display = 'block';
-    $('selectedCharacter').textContent = `${item.name} · ${item.reference_count} reference · ${item.look_count} looks · voice: ${item.voice || 'mặc định hệ thống'}`;
-    $('videoVoice').placeholder = item.voice ? `Đang dùng ${item.voice}` : 'Dùng voice mặc định hệ thống';
-    populateLookSelect(item, preferredLook);
+  if (!characters.length) {
+    list.innerHTML = '<div class="muted">Chưa có character.</div>';
+    selects.forEach((s) => s.innerHTML = '<option value="">Hãy tạo character trước</option>');
+    syncSelected();
+    return;
   }
 
-  function renderLookManager() {
-    const id = $('lookCharacterSelect').value;
-    if (id && $('characterSelect').value !== id) $('characterSelect').value = id;
-    updateSelectedCharacter($('lookSelect').value);
+  const resolved = old && characters.some((x) => x.character_id === old) ? old : characters[0].character_id;
+  $('characterSelect').value = resolved;
+  $('lookCharacterSelect').value = resolved;
+  $('voiceCharacterSelect').value = resolved;
+  syncSelected(preferredLook);
+}
+
+function renderReferencePreviews() {
+  const files = Array.from($('characterImages').files || []);
+  const container = $('imagePreviews');
+  container.innerHTML = '';
+  if (files.length > 5) {
+    $('characterMessage').textContent = 'Tối đa 5 ảnh.';
+    $('characterImages').value = '';
+    return;
   }
-
-  async function loadCharacters(preferredId = '', preferredLook = '') {
-    characters = await request('/api/characters');
-    const list = $('characters');
-    const select = $('characterSelect');
-    const lookCharacterSelect = $('lookCharacterSelect');
-    const previous = preferredId || select.value;
-    list.innerHTML = '';
-    select.innerHTML = '';
-    lookCharacterSelect.innerHTML = '';
-
-    for (const item of characters) {
-      const box = document.createElement('div');
-      box.className = 'character';
-      box.dataset.id = item.character_id;
-      box.addEventListener('click', () => {
-        select.value = item.character_id;
-        lookCharacterSelect.value = item.character_id;
-        updateSelectedCharacter();
-      });
-
-      const img = document.createElement('img');
-      img.src = `${item.image_url}?t=${Date.now()}`;
-      img.alt = item.name;
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      const strong = document.createElement('strong');
-      strong.appendChild(text(item.name));
-      meta.appendChild(strong);
-      meta.appendChild(document.createElement('br'));
-      const idLine = document.createElement('span');
-      idLine.className = 'muted';
-      idLine.appendChild(text(item.character_id));
-      meta.appendChild(idLine);
-      meta.appendChild(document.createElement('br'));
-      const refs = document.createElement('span');
-      refs.className = 'pill';
-      refs.appendChild(text(`${item.reference_count} refs`));
-      meta.appendChild(refs);
-      const looks = document.createElement('span');
-      looks.className = 'pill';
-      looks.appendChild(text(`${item.look_count} looks`));
-      meta.appendChild(looks);
-      box.appendChild(img);
-      box.appendChild(meta);
-      list.appendChild(box);
-
-      for (const target of [select, lookCharacterSelect]) {
-        const option = document.createElement('option');
-        option.value = item.character_id;
-        option.textContent = `${item.name} (${item.character_id})`;
-        target.appendChild(option);
-      }
-    }
-
-    if (!characters.length) {
-      list.innerHTML = '<div class="muted">Chưa có character.</div>';
-      select.innerHTML = '<option value="">Hãy tạo character trước</option>';
-      lookCharacterSelect.innerHTML = '<option value="">Hãy tạo character trước</option>';
-      updateSelectedCharacter();
-      return;
-    }
-
-    const resolvedId = previous && characters.some((x) => x.character_id === previous)
-      ? previous
-      : characters[0].character_id;
-    select.value = resolvedId;
-    lookCharacterSelect.value = resolvedId;
-    updateSelectedCharacter(preferredLook);
-  }
-
-  function renderReferencePreviews() {
-    const files = Array.from($('characterImages').files || []);
-    const container = $('imagePreviews');
-    container.innerHTML = '';
-    if (files.length > 5) {
-      $('characterMessage').textContent = 'Chỉ chọn tối đa 5 ảnh.';
-      $('characterImages').value = '';
-      $('primaryIndex').value = '0';
-      return;
-    }
-    let selected = Number($('primaryIndex').value || 0);
-    if (selected >= files.length) selected = 0;
-    $('primaryIndex').value = String(selected);
-
-    files.forEach((file, index) => {
-      const item = document.createElement('div');
-      item.className = `preview ${index === selected ? 'selected' : ''}`;
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(file);
-      img.onload = () => URL.revokeObjectURL(img.src);
-      const label = document.createElement('span');
-      label.textContent = index === selected ? 'MASTER' : `Reference ${index + 1}`;
-      item.appendChild(img);
-      item.appendChild(label);
-      item.addEventListener('click', () => {
-        $('primaryIndex').value = String(index);
-        renderReferencePreviews();
-      });
-      container.appendChild(item);
-    });
-  }
-
-  $('characterImages').addEventListener('change', () => {
-    $('characterMessage').textContent = '';
-    $('primaryIndex').value = '0';
-    renderReferencePreviews();
+  let selected = Number($('primaryIndex').value || 0);
+  if (selected >= files.length) selected = 0;
+  $('primaryIndex').value = String(selected);
+  files.forEach((file, index) => {
+    const item = document.createElement('div');
+    item.className = `preview ${index === selected ? 'selected' : ''}`;
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.onload = () => URL.revokeObjectURL(img.src);
+    const label = document.createElement('span');
+    label.textContent = index === selected ? 'MASTER' : `Reference ${index + 1}`;
+    item.append(img, label);
+    item.onclick = () => { $('primaryIndex').value = String(index); renderReferencePreviews(); };
+    container.appendChild(item);
   });
+}
 
-  $('characterForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const files = $('characterImages').files;
-    if (!files.length || files.length > 5) {
-      $('characterMessage').textContent = 'Cần 1–5 ảnh reference.';
-      return;
-    }
-    $('characterMessage').className = 'muted';
-    $('characterMessage').textContent = 'Đang lưu identity...';
-    try {
-      const created = await request('/api/characters', { method: 'POST', body: new FormData(form) });
-      $('characterMessage').className = 'success';
-      $('characterMessage').textContent = `Đã tạo ${created.name}`;
-      form.reset();
-      $('primaryIndex').value = '0';
-      $('imagePreviews').innerHTML = '';
-      await loadCharacters(created.character_id);
-    } catch (e) {
-      $('characterMessage').className = 'error';
-      $('characterMessage').textContent = e.message;
-    }
-  });
+$('characterImages').addEventListener('change', () => { $('primaryIndex').value = '0'; renderReferencePreviews(); });
 
-  $('lookForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const characterId = $('lookCharacterSelect').value;
-    if (!characterId) {
-      $('lookMessage').textContent = 'Hãy tạo character trước.';
-      return;
-    }
-    $('lookMessage').className = 'muted';
-    $('lookMessage').textContent = 'Đang lưu Look...';
-    try {
-      const created = await request(`/api/characters/${encodeURIComponent(characterId)}/looks`, {
-        method: 'POST',
-        body: new FormData(form),
-      });
-      $('lookMessage').className = 'success';
-      $('lookMessage').textContent = `Đã thêm ${created.name}`;
-      form.reset();
-      await loadCharacters(characterId, created.look_id);
-    } catch (e) {
-      $('lookMessage').className = 'error';
-      $('lookMessage').textContent = e.message;
-    }
-  });
+$('characterForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const files = $('characterImages').files;
+  if (!files.length || files.length > 5) return;
+  $('characterMessage').className = 'muted';
+  $('characterMessage').textContent = 'Đang lưu...';
+  try {
+    const created = await request('/api/characters', { method:'POST', body:new FormData(form) });
+    $('characterMessage').className = 'success';
+    $('characterMessage').textContent = `Đã tạo ${created.name}`;
+    form.reset(); $('primaryIndex').value = '0'; $('imagePreviews').innerHTML = '';
+    await loadCharacters(created.character_id);
+  } catch (e) {
+    $('characterMessage').className = 'error'; $('characterMessage').textContent = e.message;
+  }
+});
 
-  $('characterSelect').addEventListener('change', () => updateSelectedCharacter());
-  $('lookCharacterSelect').addEventListener('change', renderLookManager);
-  $('lookSelect').addEventListener('change', () => renderLooks(currentCharacter()));
+$('lookForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const id = $('lookCharacterSelect').value;
+  $('lookMessage').className = 'muted'; $('lookMessage').textContent = 'Đang lưu...';
+  try {
+    const created = await request(`/api/characters/${encodeURIComponent(id)}/looks`, { method:'POST', body:new FormData(event.currentTarget) });
+    $('lookMessage').className = 'success'; $('lookMessage').textContent = `Đã thêm ${created.name}`;
+    event.currentTarget.reset();
+    await loadCharacters(id, created.look_id);
+  } catch (e) {
+    $('lookMessage').className = 'error'; $('lookMessage').textContent = e.message;
+  }
+});
 
-  $('videoForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    $('generateButton').disabled = true;
-    $('job').hidden = false;
-    $('resultVideo').hidden = true;
-    $('jobError').textContent = '';
-    $('progressBar').style.width = '0%';
-    $('jobMessage').textContent = 'Đang tạo job...';
-    try {
-      const job = await request('/api/videos', { method: 'POST', body: new FormData(form) });
-      $('jobTitle').textContent = `Job ${job.job_id.slice(0, 8)}`;
-      pollJob(job.job_id);
-    } catch (e) {
-      $('jobError').textContent = e.message;
+$('voiceForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const id = $('voiceCharacterSelect').value;
+  $('voiceMessage').className = 'muted'; $('voiceMessage').textContent = 'Đang chuẩn hóa và lưu voice...';
+  try {
+    const created = await request(`/api/characters/${encodeURIComponent(id)}/voice`, { method:'POST', body:new FormData(event.currentTarget) });
+    $('voiceMessage').className = 'success';
+    $('voiceMessage').textContent = `Voice clone sẵn sàng · ref ${created.reference_duration_sec.toFixed(1)}s`;
+    await loadCharacters(id);
+  } catch (e) {
+    $('voiceMessage').className = 'error'; $('voiceMessage').textContent = e.message;
+  }
+});
+
+$('characterSelect').addEventListener('change', () => syncSelected());
+$('lookCharacterSelect').addEventListener('change', () => { $('characterSelect').value = $('lookCharacterSelect').value; syncSelected($('lookSelect').value); });
+$('voiceCharacterSelect').addEventListener('change', () => { $('characterSelect').value = $('voiceCharacterSelect').value; syncSelected($('lookSelect').value); });
+$('lookSelect').addEventListener('change', () => renderLooks(currentCharacter()));
+
+$('videoForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  $('generateButton').disabled = true;
+  $('job').hidden = false; $('resultVideo').hidden = true; $('jobError').textContent = '';
+  $('progressBar').style.width = '0%'; $('jobMessage').textContent = 'Đang tạo job...';
+  try {
+    const job = await request('/api/videos', { method:'POST', body:new FormData(event.currentTarget) });
+    $('jobTitle').textContent = `Job ${job.job_id.slice(0,8)}`;
+    pollJob(job.job_id);
+  } catch (e) {
+    $('jobError').textContent = e.message; $('generateButton').disabled = false;
+  }
+});
+
+async function pollJob(id) {
+  try {
+    const job = await request(`/api/jobs/${id}`);
+    $('progressBar').style.width = `${job.progress || 0}%`;
+    $('jobMessage').textContent = `${job.status} · ${job.message || ''}`;
+    if (job.status === 'completed') {
       $('generateButton').disabled = false;
+      $('resultVideo').src = `${job.output_url}?t=${Date.now()}`;
+      $('resultVideo').hidden = false;
+      return;
     }
-  });
-
-  async function pollJob(jobId) {
-    try {
-      const job = await request(`/api/jobs/${jobId}`);
-      $('progressBar').style.width = `${job.progress || 0}%`;
-      $('jobMessage').textContent = `${job.status} · ${job.message || ''}`;
-      if (job.status === 'completed') {
-        $('generateButton').disabled = false;
-        $('resultVideo').src = `${job.output_url}?t=${Date.now()}`;
-        $('resultVideo').hidden = false;
-        return;
-      }
-      if (job.status === 'failed') {
-        $('generateButton').disabled = false;
-        $('jobError').textContent = job.error || 'Render thất bại';
-        return;
-      }
-      setTimeout(() => pollJob(jobId), 2000);
-    } catch (e) {
+    if (job.status === 'failed') {
       $('generateButton').disabled = false;
-      $('jobError').textContent = e.message;
+      $('jobError').textContent = job.error || 'Render thất bại';
+      return;
     }
+    setTimeout(() => pollJob(id), 2000);
+  } catch (e) {
+    $('generateButton').disabled = false; $('jobError').textContent = e.message;
   }
+}
 
-  loadHealth();
-  loadCharacters();
+loadHealth();
+loadCharacters();
 </script>
 </body>
 </html>
