@@ -4,6 +4,19 @@ $MuseDir = "external\MuseTalk"
 $MusePython = "$MuseDir\.venv\Scripts\python.exe"
 $AppPython = ".venv\Scripts\python.exe"
 
+function Invoke-Step {
+    param(
+        [string]$Name,
+        [scriptblock]$Command
+    )
+
+    Write-Host $Name -ForegroundColor Cyan
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Name failed with exit code $LASTEXITCODE."
+    }
+}
+
 if (-not (Test-Path "$MuseDir\requirements.txt")) {
     throw "MuseTalk was not found. Run .\scripts\setup_windows.ps1 first."
 }
@@ -26,29 +39,58 @@ if (-not (Test-Path $MusePython)) {
 Write-Host "MuseTalk Python:" -ForegroundColor Cyan
 & $MusePython --version
 
-Write-Host "Upgrading pip/wheel/setuptools..." -ForegroundColor Cyan
-& $MusePython -m pip install --upgrade pip wheel setuptools
-if ($LASTEXITCODE -ne 0) { throw "Failed to upgrade MuseTalk packaging tools." }
+Invoke-Step "Upgrading pip/wheel/setuptools" {
+    & $MusePython -m pip install --upgrade pip wheel "setuptools<82"
+}
 
-Write-Host "Installing PyTorch CUDA 11.8 build..." -ForegroundColor Cyan
-& $MusePython -m pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
-if ($LASTEXITCODE -ne 0) { throw "Failed to install PyTorch CUDA 11.8 packages." }
+Invoke-Step "Installing PyTorch CUDA 11.8 build" {
+    & $MusePython -m pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+}
 
-Write-Host "Installing MuseTalk requirements..." -ForegroundColor Cyan
-& $MusePython -m pip install -r "$MuseDir\requirements.txt"
-if ($LASTEXITCODE -ne 0) { throw "Failed to install MuseTalk requirements." }
+Invoke-Step "Installing MuseTalk requirements" {
+    & $MusePython -m pip install -r "$MuseDir\requirements.txt"
+}
 
-Write-Host "Installing MMLab packages..." -ForegroundColor Cyan
-& $MusePython -m pip install --no-cache-dir -U openmim
-if ($LASTEXITCODE -ne 0) { throw "Failed to install openmim." }
-& $MusePython -m mim install mmengine
-if ($LASTEXITCODE -ne 0) { throw "Failed to install mmengine." }
-& $MusePython -m mim install "mmcv==2.0.1"
-if ($LASTEXITCODE -ne 0) { throw "Failed to install mmcv." }
-& $MusePython -m mim install "mmdet==3.1.0"
-if ($LASTEXITCODE -ne 0) { throw "Failed to install mmdet." }
-& $MusePython -m mim install "mmpose==1.1.0"
-if ($LASTEXITCODE -ne 0) { throw "Failed to install mmpose." }
+Invoke-Step "Installing openmim" {
+    & $MusePython -m pip install --no-cache-dir -U openmim
+}
+
+Invoke-Step "Installing mmengine" {
+    & $MusePython -m mim install mmengine
+}
+
+Invoke-Step "Installing mmcv 2.0.1" {
+    & $MusePython -m mim install "mmcv==2.0.1"
+}
+
+Invoke-Step "Installing mmdet 3.1.0" {
+    & $MusePython -m mim install "mmdet==3.1.0"
+}
+
+# mmpose 1.1.0 depends on chumpy 0.70. chumpy's legacy setup.py imports pip,
+# which breaks inside modern PEP 517 build isolation with:
+# ModuleNotFoundError: No module named 'pip'.
+# Install it first with build isolation disabled so mmpose sees it as satisfied.
+Write-Host "Checking chumpy workaround for mmpose..." -ForegroundColor Cyan
+& $MusePython -c "import chumpy" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Invoke-Step "Installing chumpy 0.70 without build isolation" {
+        & $MusePython -m pip install --no-build-isolation "chumpy==0.70"
+    }
+} else {
+    Write-Host "chumpy is already installed; skipping workaround."
+}
+
+Invoke-Step "Installing mmpose 1.1.0" {
+    & $MusePython -m mim install "mmpose==1.1.0"
+}
+
+Write-Host ""
+Write-Host "Verifying MMLab imports..." -ForegroundColor Cyan
+& $MusePython -c "import torch, mmengine, mmcv, mmdet, mmpose, chumpy; print('torch', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('mmcv', mmcv.__version__); print('mmdet', mmdet.__version__); print('mmpose', mmpose.__version__)"
+if ($LASTEXITCODE -ne 0) {
+    throw "MuseTalk dependencies installed but import verification failed."
+}
 
 Write-Host ""
 Write-Host "MuseTalk environment setup completed." -ForegroundColor Green
