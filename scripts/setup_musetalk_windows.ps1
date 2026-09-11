@@ -68,17 +68,19 @@ Invoke-Step "Installing mmdet 3.1.0" {
 }
 
 # mmpose 1.1.0 depends on chumpy 0.70. chumpy's legacy setup.py imports pip,
-# which breaks inside modern PEP 517 build isolation with:
-# ModuleNotFoundError: No module named 'pip'.
-# Install it first with build isolation disabled so mmpose sees it as satisfied.
+# which breaks inside modern PEP 517 build isolation.
+# Do NOT probe with `import chumpy` here: on Windows PowerShell 5.1 a failed
+# native stderr probe can be promoted to NativeCommandError when ErrorActionPreference=Stop.
 Write-Host "Checking chumpy workaround for mmpose..." -ForegroundColor Cyan
-& $MusePython -c "import chumpy" 2>$null
-if ($LASTEXITCODE -ne 0) {
+& $MusePython -c "import importlib.util,sys; sys.exit(0 if importlib.util.find_spec('chumpy') else 1)"
+$ChumpyInstalled = ($LASTEXITCODE -eq 0)
+
+if (-not $ChumpyInstalled) {
     Invoke-Step "Installing chumpy 0.70 without build isolation" {
         & $MusePython -m pip install --no-build-isolation "chumpy==0.70"
     }
 } else {
-    Write-Host "chumpy is already installed; skipping workaround."
+    Write-Host "chumpy package is already present; skipping workaround."
 }
 
 Invoke-Step "Installing mmpose 1.1.0" {
@@ -87,7 +89,7 @@ Invoke-Step "Installing mmpose 1.1.0" {
 
 Write-Host ""
 Write-Host "Verifying MMLab imports..." -ForegroundColor Cyan
-& $MusePython -c "import torch, mmengine, mmcv, mmdet, mmpose, chumpy; print('torch', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('mmcv', mmcv.__version__); print('mmdet', mmdet.__version__); print('mmpose', mmpose.__version__)"
+& $MusePython -c "import torch, mmengine, mmcv, mmdet, mmpose; print('torch', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('mmcv', mmcv.__version__); print('mmdet', mmdet.__version__); print('mmpose', mmpose.__version__)"
 if ($LASTEXITCODE -ne 0) {
     throw "MuseTalk dependencies installed but import verification failed."
 }
